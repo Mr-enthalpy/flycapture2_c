@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flycapture2-c"
+version = "0.1.0"
+description = "Minimal maintainable Python wrapper around the FlyCapture2 C API."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy>=1.24",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "hardware: requires real FlyCapture2 SDK and camera hardware",
+]

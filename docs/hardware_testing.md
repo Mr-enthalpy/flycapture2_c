@@ -1,0 +1,35 @@
+# Hardware Testing
+
+Hardware access is always opt-in.
+
+Environment variables:
+
+- `FLYCAPTURE2_HARDWARE_TEST=1`
+- `FLYCAPTURE2_HARDWARE_WRITE_TEST=0|1`
+- `FLYCAPTURE2_CAMERA_INDEX=0`
+- `FLYCAPTURE2_FRAME_COUNT=30`
+- `FLYCAPTURE2_CAPTURE_TIMEOUT_MS=...`
+
+Examples:
+
+```powershell
+FLYCAPTURE2_HARDWARE_TEST=1 python scripts/hardware_smoke.py --level readonly --report-json outputs/readonly.json
+FLYCAPTURE2_HARDWARE_TEST=1 python scripts/hardware_smoke.py --level grab-one --save-frame outputs/frame.npy --report-json outputs/grab_one.json
+FLYCAPTURE2_HARDWARE_TEST=1 python scripts/hardware_smoke.py --level grab-sequence --report-json outputs/sequence.json
+```
+
+Optional reversible property write check:
+
+```powershell
+FLYCAPTURE2_HARDWARE_TEST=1
+FLYCAPTURE2_HARDWARE_WRITE_TEST=1
+python scripts/hardware_smoke.py --level write-property --report-json outputs/write_property.json
+```
+
+Notes:
+
+- default `pytest` skips all hardware tests
+- property write tests require both hardware opt-in flags
+- `FLYCAPTURE2_CAPTURE_TIMEOUT_MS` is currently a wall-clock threshold around `read_frame()`
+- it is not an SDK-internal grab timeout configuration
+- frame and sequence saves use `.npy` and do not depend on image libraries
