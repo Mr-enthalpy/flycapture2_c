@@ -2,8 +2,8 @@
 
 These examples use only the FlyCapture2 C API wrapper. They do not require any GUI path.
 
-Status note: Stage 5A embedded metadata and diagnostics are implemented. Stage
-5B strobe/GPIO is the next planned stage.
+Status note: Stage 5B strobe/GPIO control is implemented. Strobe and GPIO
+availability are camera-model-dependent and wiring-dependent.
 
 ## Configure External Hardware Trigger
 
@@ -262,3 +262,84 @@ with Camera.open(0) as cam:
 `Camera.reset_camera_stats()` resets diagnostic counters and should be treated as
 a write-like operation. Hardware tests for it require
 `FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
+
+## Inspect Strobe Source Support
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    info = cam.get_strobe_info(source=0)
+    print(info)
+```
+
+`source` is the FlyCapture2 strobe source/channel. Do not assume every camera
+exposes every source.
+
+## Reversible Strobe Configuration
+
+Save the current strobe state before writing and restore it in `finally`.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old = cam.get_strobe(source=0)
+    try:
+        cam.set_strobe(source=0, on=True, polarity=1, delay=0.0, duration=1.0)
+        current = cam.get_strobe(source=0)
+        print(current)
+    finally:
+        cam.set_strobe(old)
+```
+
+`Camera.set_strobe()` validates source support, on/off support, polarity
+support, and delay/duration range before writing. It does not require frame
+capture or embedded metadata.
+
+## GPIO Pin Direction
+
+This wrapper only exposes GPIO functions that are directly present in the
+FlyCapture2 C API.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    direction = cam.get_gpio_pin_direction(pin=0)
+    print("output" if direction else "input")
+```
+
+Changing GPIO direction is an explicit hardware write:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old = cam.get_gpio_pin_direction(pin=0)
+    try:
+        cam.set_gpio_pin_direction(pin=0, direction="input")
+    finally:
+        cam.set_gpio_pin_direction(pin=0, direction=old)
+```
+
+## Optional Strobe/GPIO Metadata Observation
+
+Embedded metadata can optionally be used to observe strobe and GPIO state after
+configuration. It is not required for strobe control.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old_metadata = cam.get_embedded_image_info()
+    try:
+        cam.set_embedded_image_info(strobe_pattern=True, gpio_pin_state=True)
+        cam.start()
+        frame = cam.read_frame_with_info()
+        print(frame.metadata.strobe_pattern if frame.metadata else None)
+        print(frame.metadata.gpio_pin_state if frame.metadata else None)
+    finally:
+        cam.stop()
+        cam.set_embedded_image_info(old_metadata)
+```

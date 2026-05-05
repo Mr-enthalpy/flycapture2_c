@@ -2,8 +2,9 @@
 
 This project replaces GUI-dependent camera setup with direct FlyCapture2 C API calls through Python.
 
-Current status: Stage 5A embedded metadata and diagnostics are implemented.
-Stage 5B strobe/GPIO is the next planned non-GUI hardware-control stage.
+Current status: Stage 5B strobe/GPIO control is implemented. GPIO scope is
+limited to direct FlyCapture2 C API pin-direction helpers and embedded
+metadata readback; register-level GPIO control is not wrapped.
 
 ## Replace GUI-Based Trigger Configuration
 
@@ -180,6 +181,49 @@ with Camera.open(0) as cam:
 `Camera.reset_camera_stats()` resets diagnostic counters. Treat it as a
 write-like operation and reserve it for explicit diagnostic workflows.
 
+## Replace GUI-Based Strobe Inspection and Configuration
+
+Legacy GUI workflows often inspected strobe source support and wrote strobe
+settings manually. Use the wrapper directly:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    info = cam.get_strobe_info(source=0)
+    print(info)
+```
+
+For reversible scripted changes:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old = cam.get_strobe(source=0)
+    try:
+        cam.set_strobe(source=0, on=True, polarity=1, delay=0.0, duration=1.0)
+        print(cam.get_strobe(source=0))
+    finally:
+        cam.set_strobe(old)
+```
+
+Strobe support and safe values are camera-model-dependent and wiring-dependent.
+`Camera.set_strobe()` validates the reported source capabilities before writing.
+
+## Replace GUI-Based GPIO Direction Inspection
+
+The FlyCapture2 C API exposes pin-direction helpers. This wrapper exposes those
+directly and does not emulate additional GPIO behavior through register writes.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    direction = cam.get_gpio_pin_direction(pin=0)
+    print("output" if direction else "input")
+```
+
 ## Notes
 
 - `Camera.enable_trigger()` and `Camera.disable_trigger()` use FlyCapture2's dedicated trigger mode API, not GUI APIs.
@@ -187,5 +231,6 @@ write-like operation and reserve it for explicit diagnostic workflows.
 - `Camera.set_format7()`, `Camera.set_roi()`, and `Camera.set_pixel_format()` use camera-side Format7 configuration, not Python-side crop logic.
 - `Camera.snapshot_properties()` replaces GUI-based camera property inspection.
 - `Camera.get_embedded_image_info()` and `Camera.read_frame_with_info().metadata` replace GUI-based embedded metadata inspection.
+- `Camera.get_strobe_info()`, `Camera.get_strobe()`, and `Camera.set_strobe()` replace GUI-based strobe source inspection and configuration.
 - Software trigger firing is not implemented yet; only trigger mode configuration is covered.
-- GigE, strobe, GPIO, callbacks, and register access are still deferred.
+- GigE, callbacks, register access, and broader GPIO control are still deferred.

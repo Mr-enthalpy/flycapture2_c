@@ -7,15 +7,18 @@ from .errors import (
     DLLLoadError,
     FlyCapture2Error,
     Format7ValidationError,
+    GPIOConfigurationError,
     PropertyModeError,
     PropertyNotWritableError,
     PropertyOutOfRangeError,
     SDKNotFoundError,
     TriggerModeError,
+    StrobeConfigurationError,
     UnsupportedFormat7Error,
     UnsupportedMetadataError,
     UnsupportedPropertyError,
     UnsupportedPixelFormatError,
+    UnsupportedStrobeError,
     UnsupportedTriggerError,
 )
 
@@ -38,6 +41,7 @@ __all__ = [
     "Format7PacketInfo",
     "Format7Validation",
     "Format7ValidationError",
+    "GPIOConfigurationError",
     "EmbeddedImageField",
     "EmbeddedImageInfo",
     "ImageMetadata",
@@ -50,6 +54,9 @@ __all__ = [
     "PropertyWritePolicy",
     "PropertyType",
     "SDKNotFoundError",
+    "StrobeConfigurationError",
+    "StrobeControl",
+    "StrobeInfo",
     "TriggerMode",
     "TriggerModeError",
     "TriggerModeInfo",
@@ -57,6 +64,7 @@ __all__ = [
     "UnsupportedMetadataError",
     "UnsupportedPropertyError",
     "UnsupportedPixelFormatError",
+    "UnsupportedStrobeError",
     "UnsupportedTriggerError",
     "enumerate_cameras",
     "open_mock_camera",
@@ -130,6 +138,14 @@ def __getattr__(name: str):
         from .config import GrabMode
 
         return GrabMode
+    if name == "StrobeControl":
+        from .strobe import StrobeControl
+
+        return StrobeControl
+    if name == "StrobeInfo":
+        from .strobe import StrobeInfo
+
+        return StrobeInfo
     if name == "MockCamera":
         from .mock import MockCamera
 

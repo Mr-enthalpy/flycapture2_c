@@ -5,8 +5,9 @@ lifecycle, acquisition, trigger mode, Format7/ROI/pixel format, SDK capture
 configuration, and the generic property system. It does not claim full SDK
 coverage.
 
-Stage 5A embedded metadata and diagnostics are implemented. Stage 5B is
-strobe/GPIO control.
+Stage 5B strobe/GPIO control is implemented. GPIO scope is limited to direct
+C API pin-direction helpers plus metadata-level GPIO pin-state observation; no
+register-level GPIO control is wrapped.
 
 ## Raw binding infrastructure
 
@@ -123,6 +124,25 @@ caller explicitly enables or disables an unavailable field.
 The raw binding treats it as optional, and the high-level reset method is a
 write-like diagnostic operation. Hardware tests for it require
 `FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
+
+## Strobe and GPIO
+
+- `fc2GetStrobeInfo()` -> `Camera.get_strobe_info(source)`
+- `fc2GetStrobe()` -> `Camera.get_strobe(source)`
+- `fc2SetStrobe()` -> `Camera.set_strobe(source, ...)`
+- `fc2SetStrobeBroadcast()` -> `Camera.set_strobe(source, ..., broadcast=True)`
+- `fc2GetGPIOPinDirection()` -> `Camera.get_gpio_pin_direction(pin)`
+- `fc2SetGPIOPinDirection()` -> `Camera.set_gpio_pin_direction(pin, direction)`
+- `fc2SetGPIOPinDirectionBroadcast()` -> `Camera.set_gpio_pin_direction(pin, direction, broadcast=True)`
+
+`Camera.set_strobe()` reads the current SDK state, applies only explicitly
+provided fields, validates support and delay/duration ranges against
+`StrobeInfo`, writes the result, then reads back the current state.
+
+GPIO support in this stage is intentionally narrow. The FlyCapture2 C API
+exposes pin direction helpers, and the embedded metadata API can observe
+`gpio_pin_state` when the camera supports that field. This project does not
+infer GPIO output behavior from registers or unrelated SDK concepts.
 
 ## Error handling
 

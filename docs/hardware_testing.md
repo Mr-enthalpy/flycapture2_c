@@ -2,8 +2,8 @@
 
 Hardware access is always opt-in.
 
-Stage 5A embedded metadata and diagnostics hardware coverage is present. The
-next hardware-facing stage is Stage 5B strobe/GPIO.
+Stage 5B strobe/GPIO hardware coverage is present. The next hardware-facing
+stage is Stage 6 GigE-specific controls.
 
 Environment variables:
 
@@ -73,6 +73,16 @@ FLYCAPTURE2_HARDWARE_WRITE_TEST=1
 python -m pytest tests/hardware/test_hardware_metadata_write_reversible.py
 ```
 
+Strobe and GPIO hardware tests:
+
+```powershell
+FLYCAPTURE2_HARDWARE_TEST=1 python -m pytest tests/hardware/test_hardware_strobe_gpio_readonly.py
+
+FLYCAPTURE2_HARDWARE_TEST=1
+FLYCAPTURE2_HARDWARE_WRITE_TEST=1
+python -m pytest tests/hardware/test_hardware_strobe_gpio_write_reversible.py
+```
+
 Notes:
 
 - default `pytest` skips all hardware tests
@@ -82,6 +92,8 @@ Notes:
 - property write tests use strict generic property helpers and restore prior property state where possible
 - embedded metadata write tests restore the original embedded metadata state where possible
 - camera diagnostic reset tests require `FLYCAPTURE2_HARDWARE_WRITE_TEST=1` because they reset counters
+- strobe write tests require both hardware opt-in flags, restore the original strobe state, and do not require an external loopback fixture
+- GPIO write tests require both hardware opt-in flags and use conservative restore patterns
 - `FLYCAPTURE2_CAPTURE_TIMEOUT_MS` is currently a wall-clock threshold around `read_frame()`
 - it is not an SDK-internal grab timeout configuration
 - `Camera.set_grab_timeout(ms)` configures the SDK-level `RetrieveBuffer()` timeout

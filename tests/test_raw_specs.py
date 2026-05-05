@@ -22,7 +22,7 @@ from flycapture2_c.ctypes_defs import (
     fc2TriggerMode,
     fc2TriggerModeInfo,
 )
-from flycapture2_c.raw.structs import fc2CameraStats, fc2EmbeddedImageInfo
+from flycapture2_c.raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2StrobeControl, fc2StrobeInfo
 from flycapture2_c.raw.specs import FUNCTION_SPECS, FunctionSpec, bind_function_specs
 
 
@@ -58,6 +58,9 @@ def test_raw_specs_cover_current_binding_surface() -> None:
         "fc2SetConfiguration",
         "fc2GetStats",
         "ResetStats",
+        "fc2GetGPIOPinDirection",
+        "fc2SetGPIOPinDirection",
+        "fc2SetGPIOPinDirectionBroadcast",
         "fc2GetFormat7Info",
         "fc2ValidateFormat7Settings",
         "fc2GetFormat7Configuration",
@@ -67,6 +70,10 @@ def test_raw_specs_cover_current_binding_surface() -> None:
         "fc2GetTriggerMode",
         "fc2SetTriggerMode",
         "fc2SetTriggerModeBroadcast",
+        "fc2GetStrobeInfo",
+        "fc2GetStrobe",
+        "fc2SetStrobe",
+        "fc2SetStrobeBroadcast",
         "fc2Connect",
         "fc2Disconnect",
         "fc2IsConnected",
@@ -121,6 +128,19 @@ def test_raw_specs_have_expected_representative_signatures() -> None:
         ctypes.POINTER(fc2Image),
         ctypes.POINTER(fc2ImageMetadata),
     ]
+    assert FUNCTION_SPECS["fc2GetGPIOPinDirection"].argtypes == [
+        fc2Context,
+        ctypes.c_uint32,
+        ctypes.POINTER(ctypes.c_uint32),
+    ]
+    assert FUNCTION_SPECS["fc2SetGPIOPinDirection"].argtypes == [
+        fc2Context,
+        ctypes.c_uint32,
+        ctypes.c_uint32,
+    ]
+    assert FUNCTION_SPECS["fc2GetStrobeInfo"].argtypes == [fc2Context, ctypes.POINTER(fc2StrobeInfo)]
+    assert FUNCTION_SPECS["fc2GetStrobe"].argtypes == [fc2Context, ctypes.POINTER(fc2StrobeControl)]
+    assert FUNCTION_SPECS["fc2SetStrobe"].argtypes == [fc2Context, ctypes.POINTER(fc2StrobeControl)]
     assert FUNCTION_SPECS["fc2RetrieveBuffer"].argtypes == [fc2Context, ctypes.POINTER(fc2Image)]
     assert FUNCTION_SPECS["fc2Connect"].argtypes == [fc2Context, ctypes.POINTER(fc2PGRGuid)]
 

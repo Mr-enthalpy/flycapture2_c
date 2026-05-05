@@ -25,9 +25,9 @@ The repository historically grew through top-level `ctypes_defs.py` and
 - `raw/library.py`: DLL loading and signature binding
 - `raw/api.py`: checked low-level calls
 
-Stage 4.5 starts this work by adding the package skeleton and moving current
-function signatures into `raw/specs.py`. Future SDK expansion should use this
-registry instead of extending monolithic binding blocks.
+Stage 4.5 started this work by adding the package skeleton and moving current
+function signatures into `raw/specs.py`. Future SDK expansion should continue
+using this registry instead of extending monolithic binding blocks.
 
 ## Stage 2: Lifecycle and Acquisition
 
@@ -68,9 +68,9 @@ Status: complete for the current project stage.
 
 ## Stage 4.5: Architecture and Documentation Stabilization
 
-Status: in progress.
+Status: complete for the current project stage.
 
-Goals:
+Implemented:
 
 - align README and docs with actual capabilities
 - add the raw package skeleton
@@ -94,21 +94,24 @@ does not implement strobe/GPIO control.
 
 ## Stage 5B: Strobe and GPIO
 
-Status: next focused stage.
+Status: complete for the current project stage.
 
-Planned direction:
+Implemented:
 
 - strobe info/read/write wrappers from the FlyCapture2 C headers
-- GPIO-related controls only where the C API exposes them directly
+- GPIO pin-direction read/write helpers where the C API exposes them directly
 - reversible, opt-in hardware write tests for any write path
 - no GUI, sidecar, IPC, or experiment workflow code
+
+GPIO pin-state observation remains part of embedded image metadata. Broader GPIO
+behavior through register access is intentionally deferred.
 
 ## Stage 6+: Future Expansion
 
 Prioritized future areas:
 
-- task-level acquisition helpers, such as bounded frame iterators and restore-state patterns
 - GigE-specific controls
+- task-level acquisition helpers, such as bounded frame iterators and restore-state patterns
 - register access as an advanced API
 - callbacks and events
 - broader raw FlyCapture2 C SDK coverage

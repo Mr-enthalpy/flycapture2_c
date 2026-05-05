@@ -44,6 +44,13 @@ from .properties import (
     PropertyWritePolicy,
     normalize_property_type,
 )
+from .strobe import (
+    StrobeControl,
+    StrobeInfo,
+    normalize_gpio_direction,
+    validate_strobe_read,
+    validate_strobe_write,
+)
 from .trigger import TriggerMode, TriggerModeInfo, validate_trigger_mode_request
 from .typing import FrameArray
 
@@ -301,6 +308,75 @@ class Camera:
         """
         self._require_open()
         self._api.reset_camera_stats()
+
+    def get_gpio_pin_direction(self, pin: int) -> int:
+        """Return GPIO pin direction: 0 for input, 1 for output."""
+        self._require_open()
+        assert self._context is not None
+        return self._api.get_gpio_pin_direction(self._context, int(pin))
+
+    def set_gpio_pin_direction(
+        self,
+        pin: int,
+        direction: bool | int | str,
+        *,
+        broadcast: bool = False,
+    ) -> int:
+        """Set GPIO pin direction and return the read-back direction.
+
+        Direction is 0/input or 1/output. The SDK sets pin direction internally
+        for trigger and strobe operations; this method is only for explicit GPIO
+        direction control exposed by the FlyCapture2 C API.
+        """
+        self._require_open()
+        assert self._context is not None
+        normalized = normalize_gpio_direction(direction)
+        self._api.set_gpio_pin_direction(self._context, int(pin), normalized, broadcast=broadcast)
+        return self.get_gpio_pin_direction(pin)
+
+    def get_strobe_info(self, source: int) -> StrobeInfo:
+        self._require_open()
+        assert self._context is not None
+        return StrobeInfo.from_c(self._api.get_strobe_info(self._context, int(source)))
+
+    def get_strobe(self, source: int) -> StrobeControl:
+        self._require_open()
+        assert self._context is not None
+        info = self.get_strobe_info(source)
+        validate_strobe_read(info)
+        return StrobeControl.from_c(self._api.get_strobe(self._context, int(source)))
+
+    def set_strobe(
+        self,
+        source: int | StrobeControl,
+        *,
+        on: bool | None = None,
+        polarity: int | None = None,
+        delay: float | None = None,
+        duration: float | None = None,
+        broadcast: bool = False,
+    ) -> StrobeControl:
+        self._require_open()
+        assert self._context is not None
+
+        if isinstance(source, StrobeControl):
+            base = source
+            source_id = base.source
+        else:
+            source_id = int(source)
+            base = self.get_strobe(source_id)
+
+        info = self.get_strobe_info(source_id)
+        validate_strobe_write(
+            info,
+            on=on,
+            polarity=polarity,
+            delay=delay,
+            duration=duration,
+        )
+        desired = base.with_updates(on=on, polarity=polarity, delay=delay, duration=duration)
+        self._api.set_strobe(self._context, desired.to_c(), broadcast=broadcast)
+        return self.get_strobe(source_id)
 
     def get_configuration(self) -> CameraConfiguration:
         self._require_open()

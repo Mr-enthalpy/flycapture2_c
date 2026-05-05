@@ -121,6 +121,18 @@ class UnsupportedMetadataError(FlyCapture2Error):
     pass
 
 
+class UnsupportedStrobeError(FlyCapture2Error):
+    pass
+
+
+class StrobeConfigurationError(FlyCapture2Error):
+    pass
+
+
+class GPIOConfigurationError(FlyCapture2Error):
+    pass
+
+
 class FlyCapture2Failure(FlyCapture2Error):
     pass
 

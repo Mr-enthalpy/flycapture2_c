@@ -28,7 +28,7 @@ from .dll import load_library
 from .errors import FC2ErrorCode, raise_for_error
 from .errors import FlyCapture2NotSupportedError
 from .raw.specs import bind_function_specs
-from .raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2ImageMetadata
+from .raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2ImageMetadata, fc2StrobeControl, fc2StrobeInfo
 
 
 class FlyCapture2CAPI:
@@ -118,6 +118,19 @@ class FlyCapture2CAPI:
 
     def set_configuration(self, context: fc2Context, config: fc2Config) -> None:
         self._check(self.dll.fc2SetConfiguration(context, ctypes.byref(config)), "fc2SetConfiguration")
+
+    def get_gpio_pin_direction(self, context: fc2Context, pin: int) -> int:
+        direction = ctypes.c_uint32()
+        self._check(
+            self.dll.fc2GetGPIOPinDirection(context, ctypes.c_uint32(pin), ctypes.byref(direction)),
+            "fc2GetGPIOPinDirection",
+        )
+        return int(direction.value)
+
+    def set_gpio_pin_direction(self, context: fc2Context, pin: int, direction: int, *, broadcast: bool = False) -> None:
+        function = self.dll.fc2SetGPIOPinDirectionBroadcast if broadcast else self.dll.fc2SetGPIOPinDirection
+        operation = "fc2SetGPIOPinDirectionBroadcast" if broadcast else "fc2SetGPIOPinDirection"
+        self._check(function(context, ctypes.c_uint32(pin), ctypes.c_uint32(direction)), operation)
 
     def get_camera_stats(self, context: fc2Context) -> fc2CameraStats:
         stats = fc2CameraStats()
@@ -219,6 +232,27 @@ class FlyCapture2CAPI:
             self.dll.fc2SetTriggerModeBroadcast(context, ctypes.byref(trigger_mode)),
             "fc2SetTriggerModeBroadcast",
         )
+
+    def get_strobe_info(self, context: fc2Context, source: int) -> fc2StrobeInfo:
+        info = fc2StrobeInfo()
+        info.source = int(source)
+        self._check(self.dll.fc2GetStrobeInfo(context, ctypes.byref(info)), "fc2GetStrobeInfo")
+        return info
+
+    def get_strobe(self, context: fc2Context, source: int) -> fc2StrobeControl:
+        control = fc2StrobeControl()
+        control.source = int(source)
+        self._check(self.dll.fc2GetStrobe(context, ctypes.byref(control)), "fc2GetStrobe")
+        return control
+
+    def set_strobe(self, context: fc2Context, control: fc2StrobeControl, *, broadcast: bool = False) -> None:
+        if broadcast:
+            self._check(
+                self.dll.fc2SetStrobeBroadcast(context, ctypes.byref(control)),
+                "fc2SetStrobeBroadcast",
+            )
+        else:
+            self._check(self.dll.fc2SetStrobe(context, ctypes.byref(control)), "fc2SetStrobe")
 
     def connect(self, context: fc2Context, guid: fc2PGRGuid) -> None:
         self._check(self.dll.fc2Connect(context, ctypes.byref(guid)), "fc2Connect")
