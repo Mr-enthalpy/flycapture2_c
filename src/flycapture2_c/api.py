@@ -59,6 +59,14 @@ class FlyCapture2CAPI:
             return
         raise_for_error(code, description=self._error_description(code), operation=operation)
 
+    def _require_function(self, name: str):
+        try:
+            return getattr(self.dll, name)
+        except AttributeError as exc:
+            raise FlyCapture2NotSupportedError(
+                f"This FlyCapture2 C DLL does not export {name}()."
+            ) from exc
+
     def create_context(self) -> fc2Context:
         context = fc2Context()
         self._check(self.dll.fc2CreateContext(ctypes.byref(context)), "fc2CreateContext")
@@ -120,16 +128,17 @@ class FlyCapture2CAPI:
         self._check(self.dll.fc2SetConfiguration(context, ctypes.byref(config)), "fc2SetConfiguration")
 
     def get_gpio_pin_direction(self, context: fc2Context, pin: int) -> int:
+        get_gpio_pin_direction = self._require_function("fc2GetGPIOPinDirection")
         direction = ctypes.c_uint32()
         self._check(
-            self.dll.fc2GetGPIOPinDirection(context, ctypes.c_uint32(pin), ctypes.byref(direction)),
+            get_gpio_pin_direction(context, ctypes.c_uint32(pin), ctypes.byref(direction)),
             "fc2GetGPIOPinDirection",
         )
         return int(direction.value)
 
     def set_gpio_pin_direction(self, context: fc2Context, pin: int, direction: int, *, broadcast: bool = False) -> None:
-        function = self.dll.fc2SetGPIOPinDirectionBroadcast if broadcast else self.dll.fc2SetGPIOPinDirection
         operation = "fc2SetGPIOPinDirectionBroadcast" if broadcast else "fc2SetGPIOPinDirection"
+        function = self._require_function(operation)
         self._check(function(context, ctypes.c_uint32(pin), ctypes.c_uint32(direction)), operation)
 
     def get_camera_stats(self, context: fc2Context) -> fc2CameraStats:
@@ -247,8 +256,9 @@ class FlyCapture2CAPI:
 
     def set_strobe(self, context: fc2Context, control: fc2StrobeControl, *, broadcast: bool = False) -> None:
         if broadcast:
+            set_strobe_broadcast = self._require_function("fc2SetStrobeBroadcast")
             self._check(
-                self.dll.fc2SetStrobeBroadcast(context, ctypes.byref(control)),
+                set_strobe_broadcast(context, ctypes.byref(control)),
                 "fc2SetStrobeBroadcast",
             )
         else:

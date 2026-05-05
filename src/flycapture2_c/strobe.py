@@ -6,6 +6,14 @@ from .errors import GPIOConfigurationError, StrobeConfigurationError, Unsupporte
 from .raw.structs import fc2StrobeControl, fc2StrobeInfo
 
 
+def normalize_gpio_pin(pin: int) -> int:
+    if isinstance(pin, bool) or not isinstance(pin, int):
+        raise GPIOConfigurationError(f"GPIO pin must be a non-negative integer, got {pin!r}.")
+    if pin < 0:
+        raise GPIOConfigurationError(f"GPIO pin must be a non-negative integer, got {pin!r}.")
+    return pin
+
+
 def normalize_gpio_direction(direction: bool | int | str) -> int:
     if isinstance(direction, str):
         normalized = direction.strip().lower()
@@ -126,6 +134,7 @@ __all__ = [
     "StrobeControl",
     "StrobeInfo",
     "normalize_gpio_direction",
+    "normalize_gpio_pin",
     "validate_strobe_read",
     "validate_strobe_write",
 ]

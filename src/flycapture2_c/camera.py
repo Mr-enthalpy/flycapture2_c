@@ -48,6 +48,7 @@ from .strobe import (
     StrobeControl,
     StrobeInfo,
     normalize_gpio_direction,
+    normalize_gpio_pin,
     validate_strobe_read,
     validate_strobe_write,
 )
@@ -313,7 +314,8 @@ class Camera:
         """Return GPIO pin direction: 0 for input, 1 for output."""
         self._require_open()
         assert self._context is not None
-        return self._api.get_gpio_pin_direction(self._context, int(pin))
+        normalized_pin = normalize_gpio_pin(pin)
+        return self._api.get_gpio_pin_direction(self._context, normalized_pin)
 
     def set_gpio_pin_direction(
         self,
@@ -330,9 +332,10 @@ class Camera:
         """
         self._require_open()
         assert self._context is not None
+        normalized_pin = normalize_gpio_pin(pin)
         normalized = normalize_gpio_direction(direction)
-        self._api.set_gpio_pin_direction(self._context, int(pin), normalized, broadcast=broadcast)
-        return self.get_gpio_pin_direction(pin)
+        self._api.set_gpio_pin_direction(self._context, normalized_pin, normalized, broadcast=broadcast)
+        return self.get_gpio_pin_direction(normalized_pin)
 
     def get_strobe_info(self, source: int) -> StrobeInfo:
         self._require_open()

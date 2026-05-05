@@ -92,7 +92,8 @@ Notes:
 - property write tests use strict generic property helpers and restore prior property state where possible
 - embedded metadata write tests restore the original embedded metadata state where possible
 - camera diagnostic reset tests require `FLYCAPTURE2_HARDWARE_WRITE_TEST=1` because they reset counters
-- strobe write tests require both hardware opt-in flags, restore the original strobe state, and do not require an external loopback fixture
+- strobe write tests require both hardware opt-in flags, restore the original strobe state, and currently perform a same-value write smoke test
+- the current strobe write test does not actively toggle external strobe output and does not require an external loopback fixture
 - GPIO write tests require both hardware opt-in flags and use conservative restore patterns
 - `FLYCAPTURE2_CAPTURE_TIMEOUT_MS` is currently a wall-clock threshold around `read_frame()`
 - it is not an SDK-internal grab timeout configuration

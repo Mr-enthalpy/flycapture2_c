@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from flycapture2_c.api import FlyCapture2CAPI
 from flycapture2_c.ctypes_defs import (
     fc2Config,
@@ -22,6 +24,7 @@ from flycapture2_c.ctypes_defs import (
     fc2TriggerMode,
     fc2TriggerModeInfo,
 )
+from flycapture2_c.errors import FlyCapture2NotSupportedError
 from flycapture2_c.raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2StrobeControl, fc2StrobeInfo
 from flycapture2_c.raw.specs import FUNCTION_SPECS, FunctionSpec, bind_function_specs
 
@@ -124,6 +127,10 @@ def test_raw_specs_have_expected_representative_signatures() -> None:
     assert FUNCTION_SPECS["fc2GetStats"].argtypes == [fc2Context, ctypes.POINTER(fc2CameraStats)]
     assert FUNCTION_SPECS["ResetStats"].argtypes == []
     assert FUNCTION_SPECS["ResetStats"].required is False
+    assert FUNCTION_SPECS["fc2GetGPIOPinDirection"].required is False
+    assert FUNCTION_SPECS["fc2SetGPIOPinDirection"].required is False
+    assert FUNCTION_SPECS["fc2SetGPIOPinDirectionBroadcast"].required is False
+    assert FUNCTION_SPECS["fc2SetStrobeBroadcast"].required is False
     assert FUNCTION_SPECS["fc2GetImageMetadata"].argtypes == [
         ctypes.POINTER(fc2Image),
         ctypes.POINTER(fc2ImageMetadata),
@@ -161,9 +168,17 @@ def test_bind_function_specs_assigns_argtypes_and_restype() -> None:
 
 
 def test_bind_function_specs_allows_missing_optional_functions() -> None:
+    optional_names = {
+        "ResetStats",
+        "fc2GetGPIOPinDirection",
+        "fc2SetGPIOPinDirection",
+        "fc2SetGPIOPinDirectionBroadcast",
+        "fc2SetStrobeBroadcast",
+    }
+
     class OptionalMissingDLL(_FakeDLL):
         def __getattr__(self, name: str) -> _FakeFunction:
-            if name == "ResetStats":
+            if name in optional_names:
                 raise AttributeError(name)
             return super().__getattr__(name)
 
@@ -171,7 +186,7 @@ def test_bind_function_specs_allows_missing_optional_functions() -> None:
 
     bind_function_specs(dll)
 
-    assert "ResetStats" not in dll.functions
+    assert optional_names.isdisjoint(dll.functions)
     assert dll.fc2GetStats.argtypes == [fc2Context, ctypes.POINTER(fc2CameraStats)]
 
 
@@ -185,6 +200,62 @@ def test_flycapture2capi_bind_uses_raw_specs_registry() -> None:
         "fc2SetFormat7ConfigurationPacket"
     ].argtypes
     assert dll.fc2SetConfiguration.argtypes == FUNCTION_SPECS["fc2SetConfiguration"].argtypes
+
+
+def test_flycapture2capi_missing_optional_strobe_broadcast_raises_not_supported() -> None:
+    class MissingBroadcastDLL:
+        def __getattr__(self, name: str):
+            if name == "fc2SetStrobeBroadcast":
+                raise AttributeError(name)
+            return _FakeFunction()
+
+    api = FlyCapture2CAPI()
+    api._dll = MissingBroadcastDLL()  # type: ignore[assignment]
+
+    with pytest.raises(FlyCapture2NotSupportedError, match="fc2SetStrobeBroadcast"):
+        api.set_strobe(fc2Context(), fc2StrobeControl(), broadcast=True)
+
+
+def test_flycapture2capi_missing_optional_gpio_getter_raises_not_supported() -> None:
+    class MissingGPIOGetterDLL:
+        def __getattr__(self, name: str):
+            if name == "fc2GetGPIOPinDirection":
+                raise AttributeError(name)
+            return _FakeFunction()
+
+    api = FlyCapture2CAPI()
+    api._dll = MissingGPIOGetterDLL()  # type: ignore[assignment]
+
+    with pytest.raises(FlyCapture2NotSupportedError, match="fc2GetGPIOPinDirection"):
+        api.get_gpio_pin_direction(fc2Context(), 0)
+
+
+def test_flycapture2capi_missing_optional_gpio_setter_raises_not_supported() -> None:
+    class MissingGPIOSetterDLL:
+        def __getattr__(self, name: str):
+            if name == "fc2SetGPIOPinDirection":
+                raise AttributeError(name)
+            return _FakeFunction()
+
+    api = FlyCapture2CAPI()
+    api._dll = MissingGPIOSetterDLL()  # type: ignore[assignment]
+
+    with pytest.raises(FlyCapture2NotSupportedError, match="fc2SetGPIOPinDirection"):
+        api.set_gpio_pin_direction(fc2Context(), 0, 1)
+
+
+def test_flycapture2capi_missing_optional_gpio_broadcast_setter_raises_not_supported() -> None:
+    class MissingGPIOBroadcastSetterDLL:
+        def __getattr__(self, name: str):
+            if name == "fc2SetGPIOPinDirectionBroadcast":
+                raise AttributeError(name)
+            return _FakeFunction()
+
+    api = FlyCapture2CAPI()
+    api._dll = MissingGPIOBroadcastSetterDLL()  # type: ignore[assignment]
+
+    with pytest.raises(FlyCapture2NotSupportedError, match="fc2SetGPIOPinDirectionBroadcast"):
+        api.set_gpio_pin_direction(fc2Context(), 0, 1, broadcast=True)
 
 
 def test_import_raw_package_is_sdk_free() -> None:

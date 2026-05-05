@@ -8,7 +8,7 @@ from flycapture2_c.camera import Camera
 from flycapture2_c.ctypes_defs import fc2CameraInfo, fc2Image, fc2PGRGuid
 from flycapture2_c.errors import GPIOConfigurationError, StrobeConfigurationError, UnsupportedStrobeError
 from flycapture2_c.raw.structs import fc2StrobeControl, fc2StrobeInfo
-from flycapture2_c.strobe import StrobeControl, StrobeInfo, normalize_gpio_direction
+from flycapture2_c.strobe import StrobeControl, StrobeInfo, normalize_gpio_direction, normalize_gpio_pin
 
 
 class StrobeFakeAPI:
@@ -212,3 +212,23 @@ def test_normalize_gpio_direction_rejects_invalid_values() -> None:
         normalize_gpio_direction("sideways")
     with pytest.raises(GPIOConfigurationError):
         normalize_gpio_direction(2)
+
+
+def test_gpio_pin_validation_rejects_negative_and_non_integer_values() -> None:
+    assert normalize_gpio_pin(0) == 0
+    assert normalize_gpio_pin(3) == 3
+    for value in (-1, True, 1.5, "0"):
+        with pytest.raises(GPIOConfigurationError):
+            normalize_gpio_pin(value)  # type: ignore[arg-type]
+
+
+def test_camera_gpio_direction_rejects_invalid_pin_before_api_call() -> None:
+    api = StrobeFakeAPI()
+    camera = _open_camera(api)
+    try:
+        with pytest.raises(GPIOConfigurationError):
+            camera.get_gpio_pin_direction(-1)
+        with pytest.raises(GPIOConfigurationError):
+            camera.set_gpio_pin_direction(-1, "input")
+    finally:
+        camera.close()

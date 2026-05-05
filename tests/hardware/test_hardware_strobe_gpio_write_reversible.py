@@ -18,6 +18,12 @@ def _find_safe_strobe_source(camera: Camera):
 
 
 def test_hardware_strobe_write_reversible(hardware_write_guard, hardware_config) -> None:
+    """Same-value write smoke test.
+
+    This verifies that the SDK write path accepts and restores the existing
+    strobe state. It intentionally does not actively toggle external strobe
+    output or require any loopback fixture.
+    """
     _ = hardware_write_guard
     with Camera.open(index=hardware_config.camera_index) as camera:
         source = _find_safe_strobe_source(camera)
