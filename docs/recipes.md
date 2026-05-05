@@ -2,6 +2,9 @@
 
 These examples use only the FlyCapture2 C API wrapper. They do not require any GUI path.
 
+Status note: Stage 5A embedded metadata and diagnostics are implemented. Stage
+5B strobe/GPIO is the next planned stage.
+
 ## Configure External Hardware Trigger
 
 Trigger source `0` is the common GPIO external trigger source used by FlyCapture2 examples. Polarity is camera and wiring dependent; pass it explicitly when needed.

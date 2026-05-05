@@ -1,6 +1,6 @@
 # API Coverage
 
-This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim.
+This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim. Stage 5A embedded metadata and diagnostics are complete for the current project scope; Stage 5B strobe/GPIO is next.
 
 | Category | Function | Structs required | Raw binding status | High-level API status | No-hardware test status | Hardware readonly test status | Hardware write test status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -41,7 +41,7 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 Deferred in this milestone:
 
 - GigE
-- strobe / GPIO
+- strobe / GPIO control (Stage 5B)
 - register access
 - software trigger firing
 - callbacks / events

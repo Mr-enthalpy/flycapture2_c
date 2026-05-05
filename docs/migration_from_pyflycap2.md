@@ -2,6 +2,9 @@
 
 This project replaces GUI-dependent camera setup with direct FlyCapture2 C API calls through Python.
 
+Current status: Stage 5A embedded metadata and diagnostics are implemented.
+Stage 5B strobe/GPIO is the next planned non-GUI hardware-control stage.
+
 ## Replace GUI-Based Trigger Configuration
 
 Legacy code often depended on a GUI object to put the camera into trigger mode:

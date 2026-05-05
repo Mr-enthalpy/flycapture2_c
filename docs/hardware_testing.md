@@ -2,6 +2,9 @@
 
 Hardware access is always opt-in.
 
+Stage 5A embedded metadata and diagnostics hardware coverage is present. The
+next hardware-facing stage is Stage 5B strobe/GPIO.
+
 Environment variables:
 
 - `FLYCAPTURE2_HARDWARE_TEST=1`

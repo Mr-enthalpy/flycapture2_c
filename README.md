@@ -20,6 +20,9 @@ Current capabilities:
 - mock camera support and default no-hardware tests
 - opt-in hardware smoke and hardware pytest suites
 
+Current stage: Stage 5A embedded metadata and diagnostics are complete. The next
+focused stage is Stage 5B strobe/GPIO.
+
 The implementation is moving toward a two-layer architecture:
 
 - `flycapture2_c.raw`: low-policy ctypes aliases, structures, function specs, DLL binding, and checked raw calls

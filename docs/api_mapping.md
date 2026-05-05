@@ -5,6 +5,9 @@ lifecycle, acquisition, trigger mode, Format7/ROI/pixel format, SDK capture
 configuration, and the generic property system. It does not claim full SDK
 coverage.
 
+Stage 5A embedded metadata and diagnostics are implemented. Stage 5B is
+strobe/GPIO control.
+
 ## Raw binding infrastructure
 
 - current function signatures are registered in `flycapture2_c.raw.specs`
