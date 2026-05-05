@@ -14,6 +14,8 @@ from .ctypes_defs import (
     fc2Property,
     fc2PropertyInfo,
     fc2TimeStamp,
+    fc2TriggerMode,
+    fc2TriggerModeInfo,
     fc2Version,
     fc2VideoMode,
 )
@@ -59,6 +61,18 @@ class FlyCapture2CAPI:
 
         dll.fc2SetProperty.argtypes = [fc2Context, ctypes.POINTER(fc2Property)]
         dll.fc2SetProperty.restype = fc2Error
+
+        dll.fc2GetTriggerModeInfo.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerModeInfo)]
+        dll.fc2GetTriggerModeInfo.restype = fc2Error
+
+        dll.fc2GetTriggerMode.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerMode)]
+        dll.fc2GetTriggerMode.restype = fc2Error
+
+        dll.fc2SetTriggerMode.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerMode)]
+        dll.fc2SetTriggerMode.restype = fc2Error
+
+        dll.fc2SetTriggerModeBroadcast.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerMode)]
+        dll.fc2SetTriggerModeBroadcast.restype = fc2Error
 
         dll.fc2Connect.argtypes = [fc2Context, ctypes.POINTER(fc2PGRGuid)]
         dll.fc2Connect.restype = fc2Error
@@ -161,6 +175,28 @@ class FlyCapture2CAPI:
 
     def set_property(self, context: fc2Context, prop: fc2Property) -> None:
         self._check(self.dll.fc2SetProperty(context, ctypes.byref(prop)), "fc2SetProperty")
+
+    def get_trigger_mode_info(self, context: fc2Context) -> fc2TriggerModeInfo:
+        trigger_mode_info = fc2TriggerModeInfo()
+        self._check(
+            self.dll.fc2GetTriggerModeInfo(context, ctypes.byref(trigger_mode_info)),
+            "fc2GetTriggerModeInfo",
+        )
+        return trigger_mode_info
+
+    def get_trigger_mode(self, context: fc2Context) -> fc2TriggerMode:
+        trigger_mode = fc2TriggerMode()
+        self._check(self.dll.fc2GetTriggerMode(context, ctypes.byref(trigger_mode)), "fc2GetTriggerMode")
+        return trigger_mode
+
+    def set_trigger_mode(self, context: fc2Context, trigger_mode: fc2TriggerMode) -> None:
+        self._check(self.dll.fc2SetTriggerMode(context, ctypes.byref(trigger_mode)), "fc2SetTriggerMode")
+
+    def set_trigger_mode_broadcast(self, context: fc2Context, trigger_mode: fc2TriggerMode) -> None:
+        self._check(
+            self.dll.fc2SetTriggerModeBroadcast(context, ctypes.byref(trigger_mode)),
+            "fc2SetTriggerModeBroadcast",
+        )
 
     def connect(self, context: fc2Context, guid: fc2PGRGuid) -> None:
         self._check(self.dll.fc2Connect(context, ctypes.byref(guid)), "fc2Connect")

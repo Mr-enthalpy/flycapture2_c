@@ -15,6 +15,9 @@ fc2PixelFormat = ctypes.c_uint32
 fc2BayerTileFormat = ctypes.c_uint32
 
 
+BOOL = ctypes.c_int
+
+
 class fc2PGRGuid(ctypes.Structure):
     _fields_ = [
         ("value", ctypes.c_uint32 * 4),
@@ -153,6 +156,31 @@ class fc2Property(ctypes.Structure):
         ("valueA", ctypes.c_uint32),
         ("valueB", ctypes.c_uint32),
         ("absValue", ctypes.c_float),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2TriggerModeInfo(ctypes.Structure):
+    _fields_ = [
+        ("present", BOOL),
+        ("readOutSupported", BOOL),
+        ("onOffSupported", BOOL),
+        ("polaritySupported", BOOL),
+        ("valueReadable", BOOL),
+        ("sourceMask", ctypes.c_uint32),
+        ("softwareTriggerSupported", BOOL),
+        ("modeMask", ctypes.c_uint32),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2TriggerMode(ctypes.Structure):
+    _fields_ = [
+        ("onOff", BOOL),
+        ("polarity", ctypes.c_uint32),
+        ("source", ctypes.c_uint32),
+        ("mode", ctypes.c_uint32),
+        ("parameter", ctypes.c_uint32),
         ("reserved", ctypes.c_uint32 * 8),
     ]
 

@@ -97,6 +97,14 @@ class PropertyModeError(FlyCapture2Error):
     pass
 
 
+class UnsupportedTriggerError(FlyCapture2Error):
+    pass
+
+
+class TriggerModeError(FlyCapture2Error):
+    pass
+
+
 class FlyCapture2Failure(FlyCapture2Error):
     pass
 

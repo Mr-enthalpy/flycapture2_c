@@ -9,8 +9,10 @@ from .errors import (
     PropertyNotWritableError,
     PropertyOutOfRangeError,
     SDKNotFoundError,
+    TriggerModeError,
     UnsupportedPropertyError,
     UnsupportedPixelFormatError,
+    UnsupportedTriggerError,
 )
 
 __all__ = [
@@ -29,8 +31,12 @@ __all__ = [
     "PropertyWritePolicy",
     "PropertyType",
     "SDKNotFoundError",
+    "TriggerMode",
+    "TriggerModeError",
+    "TriggerModeInfo",
     "UnsupportedPropertyError",
     "UnsupportedPixelFormatError",
+    "UnsupportedTriggerError",
     "enumerate_cameras",
     "open_mock_camera",
 ]
@@ -67,6 +73,14 @@ def __getattr__(name: str):
         from .properties import PropertyWritePolicy
 
         return PropertyWritePolicy
+    if name == "TriggerMode":
+        from .trigger import TriggerMode
+
+        return TriggerMode
+    if name == "TriggerModeInfo":
+        from .trigger import TriggerModeInfo
+
+        return TriggerModeInfo
     if name == "open_mock_camera":
         from .mock import open_mock_camera
 
