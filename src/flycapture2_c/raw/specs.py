@@ -13,11 +13,14 @@ from typing import Any, Mapping, Sequence
 
 from .structs import (
     fc2CameraInfo,
+    fc2CameraStats,
     fc2Config,
+    fc2EmbeddedImageInfo,
     fc2Format7ImageSettings,
     fc2Format7Info,
     fc2Format7PacketInfo,
     fc2Image,
+    fc2ImageMetadata,
     fc2PGRGuid,
     fc2Property,
     fc2PropertyInfo,
@@ -37,9 +40,15 @@ class FunctionSpec:
     argtypes: Sequence[Any]
     restype: Any
     category: str
+    required: bool = True
 
     def bind(self, dll: ctypes.CDLL) -> None:
-        function = getattr(dll, self.name)
+        try:
+            function = getattr(dll, self.name)
+        except AttributeError:
+            if self.required:
+                raise
+            return
         function.argtypes = list(self.argtypes)
         function.restype = self.restype
 
@@ -58,8 +67,22 @@ _SPECS = [
     FunctionSpec("fc2GetPropertyInfo", [fc2Context, ctypes.POINTER(fc2PropertyInfo)], fc2Error, "property"),
     FunctionSpec("fc2GetProperty", [fc2Context, ctypes.POINTER(fc2Property)], fc2Error, "property"),
     FunctionSpec("fc2SetProperty", [fc2Context, ctypes.POINTER(fc2Property)], fc2Error, "property"),
+    FunctionSpec(
+        "fc2GetEmbeddedImageInfo",
+        [fc2Context, ctypes.POINTER(fc2EmbeddedImageInfo)],
+        fc2Error,
+        "metadata",
+    ),
+    FunctionSpec(
+        "fc2SetEmbeddedImageInfo",
+        [fc2Context, ctypes.POINTER(fc2EmbeddedImageInfo)],
+        fc2Error,
+        "metadata",
+    ),
     FunctionSpec("fc2GetConfiguration", [fc2Context, ctypes.POINTER(fc2Config)], fc2Error, "configuration"),
     FunctionSpec("fc2SetConfiguration", [fc2Context, ctypes.POINTER(fc2Config)], fc2Error, "configuration"),
+    FunctionSpec("fc2GetStats", [fc2Context, ctypes.POINTER(fc2CameraStats)], fc2Error, "diagnostics"),
+    FunctionSpec("ResetStats", [], fc2Error, "diagnostics", required=False),
     FunctionSpec(
         "fc2GetFormat7Info",
         [fc2Context, ctypes.POINTER(fc2Format7Info), ctypes.POINTER(ctypes.c_int)],
@@ -133,6 +156,12 @@ _SPECS = [
     FunctionSpec(
         "fc2GetImageData",
         [ctypes.POINTER(fc2Image), ctypes.POINTER(ctypes.POINTER(ctypes.c_ubyte))],
+        fc2Error,
+        "image",
+    ),
+    FunctionSpec(
+        "fc2GetImageMetadata",
+        [ctypes.POINTER(fc2Image), ctypes.POINTER(fc2ImageMetadata)],
         fc2Error,
         "image",
     ),

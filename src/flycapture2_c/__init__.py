@@ -1,4 +1,4 @@
-"""Minimal Python wrapper for the FlyCapture2 C SDK."""
+"""Python wrapper for the FlyCapture2 C SDK."""
 
 from .bus import CameraDescriptor, enumerate_cameras
 from .errors import (
@@ -13,6 +13,7 @@ from .errors import (
     SDKNotFoundError,
     TriggerModeError,
     UnsupportedFormat7Error,
+    UnsupportedMetadataError,
     UnsupportedPropertyError,
     UnsupportedPixelFormatError,
     UnsupportedTriggerError,
@@ -23,6 +24,7 @@ __all__ = [
     "CameraConfiguration",
     "CameraConfigurationError",
     "CameraInfo",
+    "CameraStats",
     "CameraDescriptor",
     "CameraStateError",
     "CameraPropertyInfo",
@@ -36,6 +38,9 @@ __all__ = [
     "Format7PacketInfo",
     "Format7Validation",
     "Format7ValidationError",
+    "EmbeddedImageField",
+    "EmbeddedImageInfo",
+    "ImageMetadata",
     "GrabMode",
     "MockCamera",
     "PixelFormat",
@@ -49,6 +54,7 @@ __all__ = [
     "TriggerModeError",
     "TriggerModeInfo",
     "UnsupportedFormat7Error",
+    "UnsupportedMetadataError",
     "UnsupportedPropertyError",
     "UnsupportedPixelFormatError",
     "UnsupportedTriggerError",
@@ -68,6 +74,18 @@ def __getattr__(name: str):
         from .camera import CameraInfo
 
         return CameraInfo
+    if name == "CameraStats":
+        from .metadata import CameraStats
+
+        return CameraStats
+    if name == "EmbeddedImageField":
+        from .metadata import EmbeddedImageField
+
+        return EmbeddedImageField
+    if name == "EmbeddedImageInfo":
+        from .metadata import EmbeddedImageInfo
+
+        return EmbeddedImageInfo
     if name == "CameraPropertyInfo":
         from .properties import CameraPropertyInfo
 
@@ -104,6 +122,10 @@ def __getattr__(name: str):
         from .format7 import Format7Validation
 
         return Format7Validation
+    if name == "ImageMetadata":
+        from .metadata import ImageMetadata
+
+        return ImageMetadata
     if name == "GrabMode":
         from .config import GrabMode
 

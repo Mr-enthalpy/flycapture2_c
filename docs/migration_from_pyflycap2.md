@@ -131,11 +131,58 @@ Property API layers:
 - Trigger source/mode/polarity use the dedicated trigger mode API.
 - Trigger delay uses the property API as `PropertyType.TRIGGER_DELAY`.
 
+## Replace GUI-Based Embedded Metadata Inspection
+
+Legacy GUI workflows often showed embedded timestamp or frame-counter controls.
+Use the SDK wrapper directly:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    info = cam.get_embedded_image_info()
+    print(info)
+```
+
+For a reversible scripted change:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old = cam.get_embedded_image_info()
+    try:
+        cam.set_embedded_image_info(timestamp=True, frame_counter=True)
+        cam.start()
+        frame = cam.read_frame_with_info()
+        print(frame.metadata)
+    finally:
+        cam.stop()
+        cam.set_embedded_image_info(old)
+```
+
+Embedded metadata support is camera-model-dependent. `Camera.set_embedded_image_info()`
+will raise a typed error if a script explicitly requests an unavailable field.
+
+## Replace GUI-Based Diagnostics Inspection
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    stats = cam.get_camera_stats()
+    print(stats)
+```
+
+`Camera.reset_camera_stats()` resets diagnostic counters. Treat it as a
+write-like operation and reserve it for explicit diagnostic workflows.
+
 ## Notes
 
 - `Camera.enable_trigger()` and `Camera.disable_trigger()` use FlyCapture2's dedicated trigger mode API, not GUI APIs.
 - `Camera.set_trigger_mode()` accepts and returns a `TriggerMode` dataclass so scripts can save and restore camera state.
 - `Camera.set_format7()`, `Camera.set_roi()`, and `Camera.set_pixel_format()` use camera-side Format7 configuration, not Python-side crop logic.
 - `Camera.snapshot_properties()` replaces GUI-based camera property inspection.
+- `Camera.get_embedded_image_info()` and `Camera.read_frame_with_info().metadata` replace GUI-based embedded metadata inspection.
 - Software trigger firing is not implemented yet; only trigger mode configuration is covered.
 - GigE, strobe, GPIO, callbacks, and register access are still deferred.

@@ -18,6 +18,11 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 | Capture | `fc2StopCapture` | `fc2Context` | raw-bound | `Camera.stop` | covered with mock/fake API | covered | not-applicable | Idempotent high-level cleanup. |
 | Image | `fc2GetImageDimensions` | `fc2Image` | raw-bound | internal frame conversion | covered | covered through opt-in capture tests | not-applicable | Supports initial mono/raw formats. |
 | Image | `fc2GetImageData` | `fc2Image` | raw-bound | internal frame copy | covered | covered through opt-in capture tests | not-applicable | Does not expose SDK pointer. |
+| Image | `fc2GetImageMetadata` | `fc2ImageMetadata` | raw-bound | `ImageFrame.metadata` via `Camera.read_frame_with_info` | covered | covered through opt-in grab-one and metadata tests | not-applicable | Metadata values are copied into `ImageMetadata`; support depends on enabled embedded fields. |
+| Metadata | `fc2GetEmbeddedImageInfo` | `fc2EmbeddedImageInfo` | raw-bound | `Camera.get_embedded_image_info` | covered | covered by opt-in metadata readonly test | used by opt-in reversible metadata write test | Exposes availability and enabled state for each embedded field. |
+| Metadata | `fc2SetEmbeddedImageInfo` | `fc2EmbeddedImageInfo` | raw-bound | `Camera.set_embedded_image_info` | covered | not-applicable | covered by opt-in reversible metadata write test | High-level API rejects explicit writes to unavailable fields. |
+| Diagnostics | `fc2GetStats` | `fc2CameraStats` | raw-bound | `Camera.get_camera_stats` | covered | covered by opt-in metadata readonly test | not-applicable | Readonly diagnostic counters and sensor values. |
+| Diagnostics | `ResetStats` | none | optional raw-bound | `Camera.reset_camera_stats` | covered | not-applicable | write-gated test added | Header exposes `ResetStats()` without an `fc2` prefix or context; binding is optional to tolerate DLL differences. |
 | Properties | `fc2GetPropertyInfo` | `fc2PropertyInfo` | raw-bound | `Camera.get_property_info`, `Camera.list_property_infos`, `Camera.snapshot_properties` | covered | covered by opt-in property readonly test | covered through opt-in reversible property test | All known `PropertyType` values are discoverable. |
 | Properties | `fc2GetProperty` | `fc2Property` | raw-bound | `Camera.get_property`, `Camera.get_property_raw`, `Camera.list_properties`, convenience getters | covered | covered by opt-in property readonly test | covered through opt-in reversible property test | Typed dataclass result for safe API, raw ctypes for advanced API. |
 | Properties | `fc2SetProperty` | `fc2Property` | raw-bound | `Camera.set_property`, `set_property_raw`, `set_property_abs`, `set_property_integer`, `set_property_on_off`, `set_property_auto`, `set_property_one_push`, convenience setters | covered | not-applicable | covered through opt-in reversible property test | Strict generic helpers check present, mode support, write support, and ranges. |
@@ -39,5 +44,4 @@ Deferred in this milestone:
 - strobe / GPIO
 - register access
 - software trigger firing
-- embedded metadata API
 - callbacks / events

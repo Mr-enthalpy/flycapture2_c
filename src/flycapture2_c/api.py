@@ -26,7 +26,9 @@ from .ctypes_defs import (
 )
 from .dll import load_library
 from .errors import FC2ErrorCode, raise_for_error
+from .errors import FlyCapture2NotSupportedError
 from .raw.specs import bind_function_specs
+from .raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2ImageMetadata
 
 
 class FlyCapture2CAPI:
@@ -95,6 +97,20 @@ class FlyCapture2CAPI:
     def set_property(self, context: fc2Context, prop: fc2Property) -> None:
         self._check(self.dll.fc2SetProperty(context, ctypes.byref(prop)), "fc2SetProperty")
 
+    def get_embedded_image_info(self, context: fc2Context) -> fc2EmbeddedImageInfo:
+        info = fc2EmbeddedImageInfo()
+        self._check(
+            self.dll.fc2GetEmbeddedImageInfo(context, ctypes.byref(info)),
+            "fc2GetEmbeddedImageInfo",
+        )
+        return info
+
+    def set_embedded_image_info(self, context: fc2Context, info: fc2EmbeddedImageInfo) -> None:
+        self._check(
+            self.dll.fc2SetEmbeddedImageInfo(context, ctypes.byref(info)),
+            "fc2SetEmbeddedImageInfo",
+        )
+
     def get_configuration(self, context: fc2Context) -> fc2Config:
         config = fc2Config()
         self._check(self.dll.fc2GetConfiguration(context, ctypes.byref(config)), "fc2GetConfiguration")
@@ -102,6 +118,20 @@ class FlyCapture2CAPI:
 
     def set_configuration(self, context: fc2Context, config: fc2Config) -> None:
         self._check(self.dll.fc2SetConfiguration(context, ctypes.byref(config)), "fc2SetConfiguration")
+
+    def get_camera_stats(self, context: fc2Context) -> fc2CameraStats:
+        stats = fc2CameraStats()
+        self._check(self.dll.fc2GetStats(context, ctypes.byref(stats)), "fc2GetStats")
+        return stats
+
+    def reset_camera_stats(self) -> None:
+        try:
+            reset_stats = self.dll.ResetStats
+        except AttributeError as exc:
+            raise FlyCapture2NotSupportedError(
+                "This FlyCapture2 C DLL does not export ResetStats()."
+            ) from exc
+        self._check(reset_stats(), "ResetStats")
 
     def get_format7_info(self, context: fc2Context, mode: int) -> tuple[fc2Format7Info, bool]:
         info = fc2Format7Info()
@@ -239,6 +269,14 @@ class FlyCapture2CAPI:
         data_ptr = ctypes.POINTER(ctypes.c_ubyte)()
         self._check(self.dll.fc2GetImageData(ctypes.byref(image), ctypes.byref(data_ptr)), "fc2GetImageData")
         return data_ptr
+
+    def get_image_metadata(self, image: fc2Image) -> fc2ImageMetadata:
+        metadata = fc2ImageMetadata()
+        self._check(
+            self.dll.fc2GetImageMetadata(ctypes.byref(image), ctypes.byref(metadata)),
+            "fc2GetImageMetadata",
+        )
+        return metadata
 
     def get_image_timestamp(self, image: fc2Image) -> fc2TimeStamp:
         return self.dll.fc2GetImageTimeStamp(ctypes.byref(image))

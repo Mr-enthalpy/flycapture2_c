@@ -78,12 +78,25 @@ Goals:
 - keep existing public imports compatible
 - avoid new SDK feature surface while preparing for future raw expansion
 
-## Stage 5+: Future Expansion
+## Stage 5: Embedded Metadata and Diagnostics
+
+Status: complete for the current project stage.
+
+- embedded image info availability and enabled-state readback
+- reversible embedded metadata enable/disable API
+- copied frame metadata on `ImageFrame.metadata`
+- camera diagnostic stats readback
+- write-gated diagnostic stats reset when the SDK exports `ResetStats()`
+- opt-in readonly and write-gated hardware tests
+
+Strobe/GPIO control is still deferred; reading embedded strobe/GPIO metadata
+values is part of image metadata only.
+
+## Stage 6+: Future Expansion
 
 Prioritized future areas:
 
 - task-level acquisition helpers, such as bounded frame iterators and restore-state patterns
-- embedded image metadata and camera diagnostics
 - strobe and GPIO control
 - GigE-specific controls
 - register access as an advanced API
