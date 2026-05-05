@@ -1,29 +1,79 @@
 # Project rules for flycapture2_c
 
-This repository provides a Python wrapper around the FlyCapture2 C API.
+This repository provides a maintainable Python wrapper around the FlyCapture2 C SDK.
 
-The goal is to replace legacy `pyflycap2` / `PyCapture2` usage with a maintainable SDK wrapper that can later be used by `optic_system`.
+The strategic goal is to replace legacy `pyflycap2` / `PyCapture2` usage with a non-GUI, scriptable, testable SDK wrapper. The wrapper must support complete camera lifecycle management, acquisition control, camera configuration, trigger control, pixel format control, and gradual expansion toward broad FlyCapture2 C API coverage.
+
+The design target is not to reproduce the old `pyflycap2.interface.Camera + GUI` workflow. In particular, automated code must not require GUI operations to configure trigger mode, pixel format, ROI, acquisition mode, exposure, gain, frame rate, or other camera parameters that the vendor SDK exposes programmatically.
+
+## Core design principle
+
+Use a two-layer architecture:
+
+1. `raw` layer:
+   - close to the FlyCapture2 C API
+   - broad SDK coverage
+   - low policy
+   - explicit ctypes structures and function signatures
+   - every SDK return code checked
+   - suitable for advanced users and future API expansion
+
+2. high-level layer:
+   - stable Pythonic `Camera` API
+   - task-oriented methods
+   - lifecycle-safe
+   - no GUI
+   - no hidden hardware side effects at import time
+   - suitable for experiment scripts and downstream libraries
+
+The raw layer may grow toward near-complete SDK coverage. The high-level layer should remain curated and task-oriented.
 
 ## Primary scope
 
-Implement a small, stable Python wrapper for the FlyCapture2 C API.
+The repository is responsible for:
 
-The first supported workflow is:
+1. locating and lazily loading the FlyCapture2 C DLL
+2. enumerating cameras
+3. opening and closing cameras safely
+4. starting and stopping capture
+5. retrieving frames
+6. copying SDK-owned image data into owned NumPy arrays
+7. reading camera metadata
+8. reading and writing camera properties
+9. configuring trigger mode without GUI
+10. configuring pixel format, Format7, and ROI without GUI
+11. configuring capture behavior, grab timeout, and buffer policy
+12. exposing selected GigE, strobe, GPIO, embedded metadata, and diagnostic APIs
+13. maintaining hardware smoke tests and no-hardware unit tests
+14. documenting API coverage and migration from legacy wrappers
 
-1. locate and load FlyCapture2 C DLL
-2. enumerate cameras
-3. open one camera
-4. start capture
-5. retrieve one or more frames
-6. copy image data into owned NumPy arrays
-7. stop capture
-8. close camera safely
+This repository is not an experiment framework, GUI application, camera server, sidecar process, reconstruction pipeline, or optical system controller.
 
-Do not attempt to bind the full SDK in the first implementation stage.
+## Non-goals
 
-## API priority
+Do not implement:
 
-Prefer the FlyCapture2 C API over the C++ API.
+- GUI
+- camera preview UI
+- PyQt / Qt integration
+- sidecar process protocol
+- shared memory frame transport
+- ZMQ / IPC transport
+- `optic_system` backend classes
+- LCD synchronization
+- experiment scheduling
+- calibration workflow
+- neural network training
+- image reconstruction
+- full data acquisition pipeline orchestration
+
+Those responsibilities belong to downstream projects.
+
+This repository only provides the FlyCapture2 C SDK wrapper and its own tests, hardware smoke tooling, and documentation.
+
+## SDK API preference
+
+Prefer the FlyCapture2 C API over the FlyCapture2 C++ API.
 
 Use headers under:
 
@@ -41,24 +91,115 @@ FlyCapture2Platform_C.h
 
 Do not bind the C++ API directly unless explicitly requested.
 
-## Dependency boundary
+Do not guess SDK structure layouts. All ctypes structures must be derived from the vendor C headers.
 
-This project must not depend on:
+## Package architecture
 
-* optic_system
-* PyQt / GUI frameworks
-* torch
-* OpenCV as a required dependency
-* pyflycap2
-* PyCapture2
+Recommended package structure:
 
-Allowed core dependencies:
+```text
+src/flycapture2_c/
+    __init__.py
 
-* Python standard library
-* ctypes
-* numpy
-* pytest for tests
-* pyyaml only for optional scripts/configs
+    camera.py
+    bus.py
+    image.py
+    pixel_format.py
+    properties.py
+    trigger.py
+    format7.py
+    config.py
+    gige.py
+    strobe.py
+    metadata.py
+    register.py
+    errors.py
+    dll.py
+    typing.py
+
+    raw/
+        __init__.py
+        types.py
+        enums.py
+        structs.py
+        specs.py
+        library.py
+        api.py
+```
+
+Layer responsibilities:
+
+```text
+raw/types.py       primitive ctypes aliases
+raw/enums.py       SDK enum values
+raw/structs.py     ctypes.Structure definitions
+raw/specs.py       function signature registry
+raw/library.py     DLL loading and binding
+raw/api.py         low-level checked API calls
+
+camera.py          high-level Camera lifecycle and acquisition API
+trigger.py         trigger mode and trigger mode info
+format7.py         Format7, ROI, pixel format configuration
+config.py          capture config, grab timeout, buffer policy
+gige.py            GigE-specific configuration
+strobe.py          strobe / GPIO control
+metadata.py        embedded image info, timestamps, camera stats
+register.py        low-level register access
+```
+
+Avoid turning `camera.py` or `api.py` into a monolithic binding file.
+
+## Public API direction
+
+The recommended high-level usage should remain simple:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(index=0) as cam:
+    cam.start()
+    frame = cam.read_frame()
+```
+
+The high-level API should also support non-GUI camera configuration:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_pixel_format("MONO8")
+    cam.set_roi(offset_x=0, offset_y=0, width=1024, height=768)
+    cam.set_shutter(5.0, auto=False)
+    cam.set_gain(0.0, auto=False)
+    cam.enable_trigger(source=0, polarity=1)
+    cam.start()
+    frame = cam.read_frame()
+```
+
+No high-level configuration operation should require GUI fallback if the vendor SDK exposes the operation programmatically.
+
+## Lifecycle policy
+
+`Camera` must maintain a clear state model:
+
+```text
+closed
+  -> opened
+  -> capturing
+  -> opened
+  -> closed
+```
+
+Required behavior:
+
+* opening hardware must not happen in `__init__`
+* use `Camera.open(...)` or explicit `open(...)`
+* `close()` must be safe to call multiple times
+* `stop()` must be safe to call multiple times
+* reading a frame before `start()` must raise a typed state error
+* starting an already started camera should be idempotent unless the SDK requires otherwise
+* SDK resources must be released on exceptions during open
+* context manager support is required
 
 ## DLL handling
 
@@ -82,6 +223,307 @@ Importing `flycapture2_c` must not require the FlyCapture2 SDK to be installed.
 
 If the DLL cannot be found or loaded, raise a clear Python exception with actionable information.
 
+## Dependency boundary
+
+Allowed core dependencies:
+
+* Python standard library
+* ctypes
+* numpy
+
+Allowed development or optional dependencies:
+
+* pytest
+* pyyaml for optional scripts/config files
+
+Do not require:
+
+* PyQt
+* Qt
+* GUI frameworks
+* OpenCV
+* torch
+* pyflycap2
+* PyCapture2
+* optic_system
+* ZMQ
+* shared-memory IPC libraries
+
+Optional extras may be introduced only when they do not affect the core import path.
+
+## Python version policy
+
+Support Python 3.8+ unless the project explicitly raises the minimum version.
+
+Do not use syntax or standard-library features unavailable in the configured minimum Python version.
+
+## Error handling
+
+Every FlyCapture2 C API return code must be checked.
+
+Convert SDK errors into typed Python exceptions.
+
+Do not silently ignore SDK errors except in narrowly defined cleanup paths where the operation is already known to be idempotent, such as suppressing expected “not connected” or “capture not started” errors during cleanup.
+
+Do not crash the interpreter on recoverable SDK failures.
+
+Prefer typed exceptions over bare `RuntimeError`.
+
+## Buffer ownership
+
+Never expose SDK-owned image buffers directly to ordinary high-level callers.
+
+Any public `read_frame()` API must return data that remains valid after the next SDK call.
+
+The default high-level frame output must be an owned NumPy array.
+
+A lower-level zero-copy or SDK-buffer view API may be introduced only if:
+
+* its lifetime contract is explicit
+* it is clearly marked advanced or unsafe
+* tests document the invalidation behavior
+
+Document buffer lifetime assumptions in `docs/buffer_lifetime.md`.
+
+## Pixel format policy
+
+Initial and stable decoded formats should include:
+
+* `MONO8`
+* `MONO16`
+* `RAW8`
+* `RAW16`
+
+Distinguish between:
+
+1. SDK pixel formats that can be configured on the camera
+2. pixel formats that the wrapper can decode into structured NumPy arrays
+
+It is acceptable to allow setting a pixel format before the wrapper supports rich decoding for that format, but frame retrieval must then either:
+
+* return a raw copied payload with metadata through an explicit raw API, or
+* raise a clear `UnsupportedPixelFormatError`
+
+Do not silently reinterpret unknown pixel formats.
+
+## Property API policy
+
+The property API must no longer be limited to only four high-level writable properties.
+
+Use a three-level model:
+
+1. raw property access:
+
+   * close to `fc2Property`
+   * advanced users may set SDK fields directly
+   * still check SDK return codes
+
+2. generic safe property helpers:
+
+   * range-checked
+   * capability-checked
+   * supports absolute values, integer values, on/off, auto/manual, one-push where available
+
+3. convenience methods:
+
+   * common camera controls such as shutter, gain, frame rate, brightness, gamma, white balance, exposure
+
+The previous high-level convenience methods should remain:
+
+```python
+cam.set_exposure(...)
+cam.set_shutter(...)
+cam.set_gain(...)
+cam.set_frame_rate(...)
+```
+
+Additional methods may be added:
+
+```python
+cam.set_brightness(...)
+cam.set_gamma(...)
+cam.set_white_balance(...)
+cam.set_property_abs(...)
+cam.set_property_raw(...)
+```
+
+Trigger mode should not be treated primarily as a generic property when the SDK provides dedicated trigger structures and functions.
+
+## Trigger API policy
+
+Trigger control is a core feature.
+
+The wrapper must expose trigger configuration without GUI.
+
+Required high-level direction:
+
+```python
+cam.get_trigger_mode_info()
+cam.get_trigger_mode()
+cam.set_trigger_mode(...)
+cam.enable_trigger(...)
+cam.disable_trigger()
+```
+
+The implementation should bind SDK structures and functions such as trigger mode, trigger mode info, get trigger mode, set trigger mode, and get trigger mode info according to the vendor C headers.
+
+Trigger tests must include:
+
+* no-hardware struct instantiation and field access
+* hardware readonly trigger info smoke test
+* opt-in reversible hardware write test:
+
+  * save old trigger state
+  * write new trigger state
+  * read back
+  * restore old state
+
+## Format7, ROI, and pixel format policy
+
+Format7 and ROI configuration are core features because many automated experiments need to configure image size and pixel format without GUI.
+
+Required high-level direction:
+
+```python
+cam.get_format7_info(...)
+cam.get_format7_configuration()
+cam.validate_format7(...)
+cam.set_format7(...)
+cam.set_roi(...)
+cam.set_pixel_format(...)
+```
+
+Do not implement ROI as a purely Python-side crop when the camera SDK supports sensor/stream ROI configuration.
+
+Python-side crop may exist only as a separate image utility and must not be confused with camera ROI.
+
+## Capture config policy
+
+Expose SDK-level acquisition configuration where needed.
+
+Required direction:
+
+```python
+cam.get_configuration()
+cam.set_configuration(...)
+cam.set_grab_timeout(ms)
+cam.set_grab_mode(...)
+```
+
+Do not confuse SDK-level grab timeout with outer Python wall-clock timeout.
+
+If scripts use Python-side timing guards, document that they are not SDK grab timeout configuration.
+
+## GigE, strobe, GPIO, and metadata policy
+
+These APIs are important but lower priority than lifecycle, trigger, Format7, ROI, pixel format, config, and property control.
+
+Expose them incrementally.
+
+Recommended high-level direction:
+
+```python
+cam.get_gige_config()
+cam.set_gige_config(...)
+
+cam.get_strobe_info(...)
+cam.get_strobe(...)
+cam.set_strobe(...)
+
+cam.get_embedded_image_info()
+cam.set_embedded_image_info(...)
+
+cam.get_camera_stats()
+```
+
+All write APIs must support reversible hardware tests when possible.
+
+## Register API policy
+
+Register access is advanced and potentially hazardous.
+
+Expose register access in a clearly marked low-level or advanced module.
+
+Do not promote register operations into the ordinary high-level API unless there is a stable, documented use case.
+
+Required direction:
+
+```python
+cam.read_register(address)
+cam.write_register(address, value)
+```
+
+Write operations must be explicit and must not be hidden inside convenience methods unless the behavior is documented and tested.
+
+## API coverage tracking
+
+Maintain `docs/api_coverage.md`.
+
+The coverage table should classify SDK functions by category and status:
+
+```text
+Category
+Function
+Structs required
+Raw binding status
+High-level API status
+No-hardware test status
+Hardware readonly test status
+Hardware write test status
+Notes
+```
+
+Suggested statuses:
+
+```text
+uninvestigated
+structs-defined
+raw-bound
+raw-tested
+high-level-planned
+high-level-implemented
+hardware-readonly-tested
+hardware-write-tested
+deferred
+not-applicable
+```
+
+Adding a new SDK function should normally update this document.
+
+## Roadmap
+
+Maintain `docs/roadmap.md`.
+
+Recommended staged roadmap:
+
+```text
+Stage 0  project direction, documentation, API coverage table
+Stage 1  raw binding infrastructure
+Stage 2  lifecycle and acquisition stability
+Stage 3  trigger, Format7, ROI, pixel format, capture config
+Stage 4  full property system
+Stage 5  task-level acquisition helpers
+Stage 6  GigE, strobe, GPIO, embedded metadata, diagnostics
+Stage 7  broad raw SDK coverage
+Stage 8  migration documentation from pyflycap2 / PyCapture2
+Stage 9  release stabilization
+```
+
+Prioritize APIs that remove GUI dependency from automated scripts.
+
+Priority order:
+
+1. lifecycle and frame acquisition
+2. trigger control
+3. pixel format and Format7 / ROI
+4. SDK capture config and grab timeout
+5. complete property access
+6. embedded metadata
+7. strobe / GPIO
+8. GigE-specific controls
+9. register access
+10. callbacks and advanced event mechanisms
+
 ## Hardware testing policy
 
 Default tests must run without:
@@ -96,236 +538,203 @@ Use environment variables such as:
 
 ```text
 FLYCAPTURE2_HARDWARE_TEST=1
+FLYCAPTURE2_HARDWARE_WRITE_TEST=0|1
 FLYCAPTURE2_CAMERA_INDEX=0
+FLYCAPTURE2_FRAME_COUNT=30
+FLYCAPTURE2_CAPTURE_TIMEOUT_MS=...
 ```
 
 No test may access real hardware unless explicitly enabled.
 
-## Buffer ownership
+No test may write camera state unless write testing is explicitly enabled.
 
-Never expose SDK-owned image buffers directly to high-level callers.
+Writable hardware tests must normally:
 
-Any public `read_frame()` API must return data that is safe after the next SDK call.
+1. read original state
+2. apply test state
+3. verify readback
+4. restore original state
+5. verify restoration where possible
 
-The default high-level frame output should be an owned NumPy array.
+## No-hardware testing policy
 
-Document buffer lifetime assumptions in `docs/buffer_lifetime.md`.
+For every new ctypes structure:
+
+* instantiate it
+* check basic field access
+* check array fields where relevant
+* check pointer fields where relevant
+* avoid relying on camera hardware
+
+For every new function binding:
+
+* verify the function spec exists
+* verify `argtypes` and `restype` are assigned
+* verify wrapper code checks SDK return values
+
+Use fake DLL or mock callable objects where useful.
+
+## ABI and ctypes policy
+
+All ctypes structures must be defined conservatively.
+
+Do not guess complex SDK structures.
+
+When adding a structure:
+
+* copy field names from the vendor C header
+* preserve field order
+* use correct integer widths
+* include reserved fields
+* add a no-hardware test
+* document uncertainty if the SDK version differs
+
+When a structure is SDK-version-sensitive, isolate it and document the SDK version used.
+
+Do not use broad automatic translation unless the generated output is reviewed and tested.
 
 ## Threading and streaming
 
-This wrapper is not responsible for GUI threading, shared memory, ZMQ, or experiment scheduling.
+The wrapper is not responsible for GUI threading, shared memory, ZMQ, or experiment scheduling.
 
-Continuous acquisition may be exposed as a simple iterator or repeated `read_frame()` loop, but this project must not implement the `optic_system` sidecar protocol.
+Continuous acquisition may be exposed as:
 
-The future `optic_system` integration should wrap this library inside its own camera service or sidecar.
+```python
+for frame in cam.frames(count=100):
+    ...
+```
 
-## Public API design
+or through repeated `read_frame()` calls.
 
-Keep the high-level API narrow.
+Do not implement a background acquisition daemon unless explicitly requested.
 
-Recommended high-level usage:
+If background acquisition is added later, it must be optional, documented, and independent from the core synchronous API.
+
+## Import behavior
+
+Importing `flycapture2_c` must be lightweight.
+
+Import must not:
+
+* load the vendor DLL
+* enumerate cameras
+* open hardware
+* start capture
+* require SDK installation
+
+Hardware-touching behavior must happen only through explicit calls.
+
+## Compatibility and migration
+
+Maintain `docs/migration_from_pyflycap2.md`.
+
+The migration guide should show how to replace legacy patterns such as:
+
+```python
+from pyflycap2.interface import Camera, GUI
+```
+
+with direct non-GUI configuration:
 
 ```python
 from flycapture2_c import Camera
 
-cam = Camera.open(index=0)
-cam.start()
-frame = cam.read_frame()
-cam.stop()
-cam.close()
+with Camera.open(0) as cam:
+    cam.set_pixel_format("MONO8")
+    cam.enable_trigger(source=0)
+    cam.start()
+    frame = cam.read_frame()
 ```
 
-`close()` and `stop()` should be safe to call multiple times.
+Do not preserve legacy API defects for compatibility.
 
-Avoid hidden global state.
+A thin compatibility layer may be added later, but it must not reintroduce GUI dependency.
 
-Avoid opening hardware in constructors.
+## Documentation requirements
 
-## Error handling
-
-Every FlyCapture2 C API return code must be checked.
-
-Convert SDK errors into typed Python exceptions.
-
-Do not silently ignore SDK errors.
-
-Do not crash the interpreter on recoverable SDK failures.
-
-## Pixel format policy
-
-Initial support should prioritize:
-
-* mono8
-* mono16
-* raw8
-* raw16
-
-Bayer conversion, RGB conversion, debayering, and advanced image processing are out of scope for the first stage.
-
-## Property API policy
-
-Do not expand the property API into a full FlyCapture2 SDK surface unless the user explicitly requests that work.
-
-The high-level property write API must stay intentionally limited and safety-checked.
-
-Supported high-level property writes are restricted to:
-
-- `AUTO_EXPOSURE`
-- `SHUTTER`
-- `GAIN`
-- `FRAME_RATE`
-
-Other property writes belong in the advanced low-level API only.
-
-## Struct and ABI policy
-
-All ctypes structures must be defined conservatively.
-
-Do not guess complex SDK structures if they are not needed for the minimal acquisition path.
-
-When a struct is added, include at least one no-hardware test that instantiates it and checks basic field accessibility.
-
-Prefer incremental binding over broad automatic translation.
-
-## Integration with optic_system
-
-This repository should not import or modify `optic_system`.
-
-Future integration should happen from the `optic_system` side through a backend such as:
+Maintain documentation for:
 
 ```text
-FlyCapture2CBackend
+docs/roadmap.md
+docs/api_coverage.md
+docs/hardware_testing.md
+docs/buffer_lifetime.md
+docs/migration_from_pyflycap2.md
+docs/recipes.md
 ```
 
-This project only provides the wrapper.
+`docs/recipes.md` should eventually include:
 
-Do not implement GUI, control/session controller logic, shared memory, or experiment workflows here.
-
-## Out of scope
-
-Do not implement:
-
-* full FlyCapture2 SDK coverage
-* GUI preview
-* camera sidecar protocol
-* shared memory frame server
-* ZMQ transport
-* calibration workflow
-* LCD synchronization
-* neural network training
-* image reconstruction
-* hardware experiment scheduler
-
-## Permanent out of scope
-
-This project must never implement:
-
-- GUI
-- camera preview UI
-- sidecar process protocol
-- shared memory frame transport
-- ZMQ / IPC transport
-- optic_system backend classes
-- experiment scheduling
-- calibration workflow
-- LCD / TLS synchronization
-- neural network training
-- data acquisition pipelines
-
-Those responsibilities belong to downstream applications such as `optic_system`.
-
-This repository only provides a FlyCapture2 C API Python wrapper and a narrow high-level Camera API.
-
-## Long-term repository note
-
-This repository may later be distilled into a separate, cleaner wrapper-only repository.
-
-Until that migration explicitly happens, keep treating this repository as the active home for:
-
-- the FlyCapture2 C API wrapper
-- its tests
-- its hardware smoke and verification scripts
-
-That long-term plan does not authorize adding GUI, sidecar, IPC, `optic_system` backend code, or experiment workflow logic here.
+* enumerate cameras
+* open camera
+* grab one frame
+* grab short sequence
+* fixed shutter/gain acquisition
+* disable auto exposure
+* configure hardware trigger
+* configure software trigger
+* configure MONO8 / MONO16 / RAW8 / RAW16
+* configure ROI
+* configure grab timeout
+* restore original camera state
 
 ## Coding style
 
 Keep modules small.
 
-Use explicit shape and dtype comments for frame arrays.
+Prefer dataclasses for public value containers.
 
-Prefer dataclasses for public data containers.
+Prefer enums for SDK enum values.
 
-Prefer typed exceptions over bare `RuntimeError`.
+Use explicit names mirroring SDK concepts where appropriate.
 
-Use clear function names mirroring SDK concepts where appropriate.
+Avoid hidden global state.
 
-Do not hide expensive or hardware-touching operations behind import-time side effects.
+Avoid hardware side effects in constructors.
 
+Avoid expensive side effects at import time.
 
+Use type annotations.
 
-suggestion `pyproject.toml` ：
+Keep high-level methods readable and task-oriented.
 
-```toml
-[build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
+Do not hide SDK-level failure modes behind vague exceptions.
 
-[project]
-name = "flycapture2-c"
-version = "0.1.0"
-description = "Minimal Python wrapper for the FlyCapture2 C API"
-readme = "README.md"
-requires-python = ">=3.9"
-dependencies = [
-    "numpy",
-]
+## Versioning direction
 
-[project.optional-dependencies]
-dev = [
-    "pytest",
-    "pyyaml",
-]
+Suggested version milestones:
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-q"
-````
-
-suggestion `.gitignore`：
-
-```gitignore
-__pycache__/
-*.py[cod]
-*.pyd
-*.so
-*.dll
-*.lib
-*.exp
-
-.venv/
-venv/
-.env
-
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-
-build/
-dist/
-*.egg-info/
-
-outputs/
-data/
-hardware_logs/
-frames/
-
-.DS_Store
-Thumbs.db
+```text
+0.1.x  minimal lifecycle and frame acquisition
+0.2.x  raw binding infrastructure, trigger, Format7, ROI, pixel format, capture config
+0.3.x  complete property system
+0.4.x  embedded metadata, strobe, GPIO, GigE basics
+0.5.x  broad raw SDK coverage and migration documentation
+1.0.0  stable high-level API, documented migration path, tested hardware workflows
 ```
+
+Do not claim full SDK coverage until `docs/api_coverage.md` supports that claim.
+
+## Review checklist for new PRs
+
+Before accepting changes, check:
+
+1. Does import still avoid loading the SDK DLL?
+2. Are all SDK error codes checked?
+3. Are new ctypes structures derived from vendor headers?
+4. Are new structures covered by no-hardware tests?
+5. Does any hardware test remain opt-in?
+6. Does any write test save and restore prior camera state?
+7. Does the change avoid GUI dependency?
+8. Does the change avoid downstream experiment logic?
+9. Is buffer ownership clear?
+10. Is `docs/api_coverage.md` updated for new SDK functions?
+11. Is the high-level API task-oriented rather than a blind SDK dump?
+12. Does raw coverage grow without destabilizing `Camera`?
+13. Does the change help remove legacy `pyflycap2` / GUI workflow dependency?
+
+## Permanent rule
+
+Never require GUI interaction for a camera configuration task that the FlyCapture2 C SDK exposes programmatically.
+
+The wrapper exists specifically to make FlyCapture2 camera control scriptable, inspectable, testable, and maintainable from Python.
