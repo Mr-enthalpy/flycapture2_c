@@ -239,16 +239,14 @@ def test_high_level_write_constructs_expected_property_and_calls_sdk_write() -> 
         camera.close()
 
 
-def test_unsupported_property_is_blocked_by_high_level_write_api() -> None:
+def test_brightness_is_supported_by_generic_high_level_write_api() -> None:
     api = PropertyPolicyFakeAPI()
     camera = _open_camera(api)
     try:
-        try:
-            camera._set_supported_absolute_property(PropertyType.BRIGHTNESS, 3.0, auto=False)
-            assert False, "expected UnsupportedPropertyError"
-        except UnsupportedPropertyError:
-            pass
-        assert api.set_property_calls == 0
+        result = camera.set_brightness(3.0, auto=False)
+        assert result.property_type == PropertyType.BRIGHTNESS
+        assert result.abs_value == 3.0
+        assert api.set_property_calls == 1
     finally:
         camera.close()
 

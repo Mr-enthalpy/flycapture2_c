@@ -36,6 +36,7 @@ SUPPORTED_HIGH_LEVEL_WRITE_PROPERTIES = frozenset(
         PropertyType.FRAME_RATE,
     }
 )
+KNOWN_PROPERTY_TYPES = tuple(property_type for property_type in PropertyType if property_type != PropertyType.UNSPECIFIED)
 
 
 class PropertyWritePolicy(str, Enum):
@@ -132,9 +133,23 @@ class CameraPropertyValue:
         )
 
 
+@dataclass(frozen=True)
+class CameraPropertySnapshot:
+    property_type: PropertyType
+    info: CameraPropertyInfo | None
+    value: CameraPropertyValue | None
+    error: str | None = None
+
+    @property
+    def present(self) -> bool:
+        return bool(self.info.present) if self.info is not None else False
+
+
 __all__ = [
     "CameraPropertyInfo",
+    "CameraPropertySnapshot",
     "CameraPropertyValue",
+    "KNOWN_PROPERTY_TYPES",
     "PropertyWritePolicy",
     "PropertyType",
     "SUPPORTED_HIGH_LEVEL_WRITE_PROPERTIES",

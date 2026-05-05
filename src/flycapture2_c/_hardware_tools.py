@@ -29,6 +29,9 @@ WRITE_CANDIDATE_ORDER = (
     PropertyType.GAIN,
     PropertyType.SHUTTER,
     PropertyType.FRAME_RATE,
+    PropertyType.BRIGHTNESS,
+    PropertyType.GAMMA,
+    PropertyType.TRIGGER_DELAY,
     PropertyType.AUTO_EXPOSURE,
 )
 
@@ -409,16 +412,12 @@ def attempt_reversible_property_write(camera: Camera) -> ReversiblePropertyWrite
         written: CameraPropertyValue | None = None
         restored: CameraPropertyValue | None = None
         try:
-            if property_type == PropertyType.AUTO_EXPOSURE:
-                written = camera.set_exposure(safe_value, auto=False)
-            elif property_type == PropertyType.SHUTTER:
-                written = camera.set_shutter(safe_value, auto=False)
-            elif property_type == PropertyType.GAIN:
-                written = camera.set_gain(safe_value, auto=False)
-            elif property_type == PropertyType.FRAME_RATE:
-                written = camera.set_frame_rate(safe_value, auto=False)
-            else:
-                continue
+            written = camera.set_property_abs(
+                property_type,
+                safe_value,
+                auto=False,
+                on=True if prop_info.on_off_supported else None,
+            )
             restored = restore_property_value(camera, property_type, current)
         except Exception:
             try:

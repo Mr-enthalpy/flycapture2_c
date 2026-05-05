@@ -31,10 +31,11 @@ from .image import ImageFrame, image_to_frame
 from .pixel_format import PixelFormat, normalize_pixel_format
 from .properties import (
     CameraPropertyInfo,
+    CameraPropertySnapshot,
     CameraPropertyValue,
+    KNOWN_PROPERTY_TYPES,
     PropertyType,
     PropertyWritePolicy,
-    SUPPORTED_HIGH_LEVEL_WRITE_PROPERTIES,
     normalize_property_type,
 )
 from .trigger import TriggerMode, TriggerModeInfo, validate_trigger_mode_request
@@ -478,6 +479,13 @@ class Camera:
         normalized = normalize_property_type(property_type)
         return CameraPropertyValue.from_c(self._api.get_property(self._context, int(normalized)))
 
+    def get_property_raw(self, property_type: PropertyType | str | int) -> fc2Property:
+        """Return the raw `fc2Property` structure for advanced callers."""
+        self._require_open()
+        assert self._context is not None
+        normalized = normalize_property_type(property_type)
+        return self._api.get_property(self._context, int(normalized))
+
     def set_property(
         self,
         property_type: PropertyType | str | int,
@@ -493,8 +501,10 @@ class Camera:
     ) -> CameraPropertyValue:
         """Advanced API.
 
-        High-level callers should prefer `set_exposure()`, `set_shutter()`, `set_gain()`,
-        and `set_frame_rate()`. `policy="raw"` bypasses high-level safety checks.
+        Generic callers should prefer `set_property_abs()`, `set_property_integer()`,
+        `set_property_on_off()`, `set_property_auto()`, or `set_property_one_push()`.
+        `policy="raw"` bypasses high-level capability and range checks but still checks
+        SDK return codes.
         """
         self._require_open()
         assert self._context is not None
@@ -511,7 +521,6 @@ class Camera:
                 value_a=value_a,
                 value_b=value_b,
                 abs_value=abs_value,
-                require_whitelist=False,
             )
 
         prop = self._api.get_property(self._context, int(normalized))
@@ -528,6 +537,122 @@ class Camera:
         )
         self._api.set_property(self._context, prop)
         return CameraPropertyValue.from_c(self._api.get_property(self._context, int(normalized)))
+
+    def set_property_raw(
+        self,
+        property_type: PropertyType | str | int,
+        *,
+        auto_manual_mode: bool | None = None,
+        on_off: bool | None = None,
+        abs_control: bool | None = None,
+        one_push: bool | None = None,
+        value_a: int | None = None,
+        value_b: int | None = None,
+        abs_value: float | None = None,
+    ) -> CameraPropertyValue:
+        """Low-policy property write close to `fc2Property`.
+
+        This is intended for advanced callers. It bypasses high-level range and capability checks,
+        but all SDK return codes are still checked.
+        """
+        return self.set_property(
+            property_type,
+            auto_manual_mode=auto_manual_mode,
+            on_off=on_off,
+            abs_control=abs_control,
+            one_push=one_push,
+            value_a=value_a,
+            value_b=value_b,
+            abs_value=abs_value,
+            policy=PropertyWritePolicy.RAW,
+        )
+
+    def set_property_abs(
+        self,
+        property_type: PropertyType | str | int,
+        value: float,
+        *,
+        auto: bool = False,
+        on: bool | None = True,
+    ) -> CameraPropertyValue:
+        return self.set_property(
+            property_type,
+            auto_manual_mode=auto,
+            on_off=on,
+            abs_control=True,
+            abs_value=float(value),
+            policy=PropertyWritePolicy.STRICT,
+        )
+
+    def set_property_integer(
+        self,
+        property_type: PropertyType | str | int,
+        *,
+        value_a: int | None = None,
+        value_b: int | None = None,
+        auto: bool = False,
+        on: bool | None = True,
+    ) -> CameraPropertyValue:
+        if value_a is None and value_b is None:
+            raise ValueError("At least one of value_a or value_b must be provided.")
+        return self.set_property(
+            property_type,
+            auto_manual_mode=auto,
+            on_off=on,
+            abs_control=False,
+            value_a=value_a,
+            value_b=value_b,
+            policy=PropertyWritePolicy.STRICT,
+        )
+
+    def set_property_on_off(self, property_type: PropertyType | str | int, *, on: bool = True) -> CameraPropertyValue:
+        return self.set_property(
+            property_type,
+            on_off=on,
+            policy=PropertyWritePolicy.STRICT,
+        )
+
+    def set_property_auto(self, property_type: PropertyType | str | int, *, auto: bool = True) -> CameraPropertyValue:
+        return self.set_property(
+            property_type,
+            auto_manual_mode=auto,
+            policy=PropertyWritePolicy.STRICT,
+        )
+
+    def set_property_one_push(self, property_type: PropertyType | str | int) -> CameraPropertyValue:
+        return self.set_property(
+            property_type,
+            one_push=True,
+            policy=PropertyWritePolicy.STRICT,
+        )
+
+    def list_property_infos(self) -> tuple[CameraPropertyInfo, ...]:
+        return tuple(self.get_property_info(property_type) for property_type in KNOWN_PROPERTY_TYPES)
+
+    def list_properties(self) -> tuple[CameraPropertyValue, ...]:
+        values: list[CameraPropertyValue] = []
+        for info in self.list_property_infos():
+            if info.present and info.read_out_supported:
+                values.append(self.get_property(info.property_type))
+        return tuple(values)
+
+    def snapshot_properties(self) -> tuple[CameraPropertySnapshot, ...]:
+        snapshots: list[CameraPropertySnapshot] = []
+        for property_type in KNOWN_PROPERTY_TYPES:
+            try:
+                info = self.get_property_info(property_type)
+                value = self.get_property(property_type) if info.present and info.read_out_supported else None
+                snapshots.append(CameraPropertySnapshot(property_type=property_type, info=info, value=value))
+            except FlyCapture2Error as exc:
+                snapshots.append(
+                    CameraPropertySnapshot(
+                        property_type=property_type,
+                        info=None,
+                        value=None,
+                        error=str(exc),
+                    )
+                )
+        return tuple(snapshots)
 
     def get_exposure(self) -> CameraPropertyValue:
         """Return FlyCapture2 `AUTO_EXPOSURE` property state.
@@ -561,6 +686,46 @@ class Camera:
     def set_frame_rate(self, value: float, *, auto: bool = False) -> CameraPropertyValue:
         return self._set_supported_absolute_property(PropertyType.FRAME_RATE, value, auto=auto)
 
+    def get_brightness(self) -> CameraPropertyValue:
+        return self.get_property(PropertyType.BRIGHTNESS)
+
+    def set_brightness(self, value: float, *, auto: bool = False) -> CameraPropertyValue:
+        return self._set_supported_absolute_property(PropertyType.BRIGHTNESS, value, auto=auto)
+
+    def get_gamma(self) -> CameraPropertyValue:
+        return self.get_property(PropertyType.GAMMA)
+
+    def set_gamma(self, value: float, *, auto: bool = False) -> CameraPropertyValue:
+        return self._set_supported_absolute_property(PropertyType.GAMMA, value, auto=auto)
+
+    def get_white_balance(self) -> CameraPropertyValue:
+        return self.get_property(PropertyType.WHITE_BALANCE)
+
+    def set_white_balance(
+        self,
+        value_a: int,
+        value_b: int,
+        *,
+        auto: bool = False,
+        on: bool | None = True,
+    ) -> CameraPropertyValue:
+        return self.set_property_integer(
+            PropertyType.WHITE_BALANCE,
+            value_a=value_a,
+            value_b=value_b,
+            auto=auto,
+            on=on,
+        )
+
+    def get_trigger_delay(self) -> CameraPropertyValue:
+        return self.get_property(PropertyType.TRIGGER_DELAY)
+
+    def set_trigger_delay(self, value: float, *, auto: bool = False) -> CameraPropertyValue:
+        return self._set_supported_absolute_property(PropertyType.TRIGGER_DELAY, value, auto=auto)
+
+    def get_temperature(self) -> CameraPropertyValue:
+        return self.get_property(PropertyType.TEMPERATURE)
+
     def _set_supported_absolute_property(
         self,
         property_type: PropertyType,
@@ -568,29 +733,13 @@ class Camera:
         *,
         auto: bool = False,
     ) -> CameraPropertyValue:
-        self._require_open()
-        assert self._context is not None
         prop_info = self.get_property_info(property_type)
-        self._validate_property_write_request(
+        return self.set_property_abs(
             property_type,
-            prop_info,
-            auto_manual_mode=auto,
-            on_off=None,
-            abs_control=True,
-            one_push=None,
-            value_a=None,
-            value_b=None,
-            abs_value=value,
-            require_whitelist=True,
+            value,
+            auto=auto,
+            on=True if prop_info.on_off_supported else None,
         )
-        prop = self._api.get_property(self._context, int(property_type))
-        prop.onOff = 1 if prop_info.on_off_supported else prop.onOff
-        prop.onePush = 0
-        prop.absControl = 1
-        prop.autoManualMode = 1 if auto else 0
-        prop.absValue = float(value)
-        self._api.set_property(self._context, prop)
-        return CameraPropertyValue.from_c(self._api.get_property(self._context, int(property_type)))
 
     def _format7_base_settings_for_mode(
         self,
@@ -636,12 +785,7 @@ class Camera:
         value_a: int | None,
         value_b: int | None,
         abs_value: float | None,
-        require_whitelist: bool,
     ) -> None:
-        if require_whitelist and property_type not in SUPPORTED_HIGH_LEVEL_WRITE_PROPERTIES:
-            raise UnsupportedPropertyError(
-                f"Property {property_type.name} is not supported by the high-level write API."
-            )
         if not prop_info.present:
             raise UnsupportedPropertyError(f"Property {property_type.name} is not present on this camera.")
         if not prop_info.writable:
@@ -655,7 +799,7 @@ class Camera:
             raise PropertyNotWritableError(f"Property {property_type.name} does not support manual writes.")
         if on_off is not None and not prop_info.on_off_supported:
             raise PropertyModeError(f"Property {property_type.name} does not support on/off control.")
-        if one_push is not None and not prop_info.one_push_supported:
+        if one_push is True and not prop_info.one_push_supported:
             raise PropertyModeError(f"Property {property_type.name} does not support one-push control.")
         if abs_control is True and not prop_info.abs_val_supported:
             raise PropertyModeError(f"Property {property_type.name} does not support absolute control.")
@@ -666,6 +810,14 @@ class Camera:
                 raise PropertyOutOfRangeError(
                     f"Property {property_type.name} absolute value {abs_value} is outside "
                     f"[{prop_info.abs_min}, {prop_info.abs_max}]."
+                )
+        for field_name, value in (("valueA", value_a), ("valueB", value_b)):
+            if value is None:
+                continue
+            if not (prop_info.min_value <= int(value) <= prop_info.max_value):
+                raise PropertyOutOfRangeError(
+                    f"Property {property_type.name} {field_name} {value} is outside "
+                    f"[{prop_info.min_value}, {prop_info.max_value}]."
                 )
 
     @staticmethod
@@ -692,7 +844,7 @@ class Camera:
                 raise PropertyModeError(f"Property {prop_info.property_type.name} does not support on/off control.")
             prop.onOff = int(on_off)
         if one_push is not None:
-            if not prop_info.one_push_supported:
+            if one_push and not prop_info.one_push_supported:
                 raise PropertyModeError(f"Property {prop_info.property_type.name} does not support one-push control.")
             prop.onePush = int(one_push)
         if abs_control is not None:
