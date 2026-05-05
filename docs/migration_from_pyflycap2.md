@@ -97,10 +97,45 @@ with Camera.open(0) as cam:
 
 This is the SDK-level `RetrieveBuffer()` timeout. It is separate from smoke-test timing guards such as `FLYCAPTURE2_CAPTURE_TIMEOUT_MS`.
 
+## Replace GUI-Based Property Inspection and Configuration
+
+```python
+from flycapture2_c import Camera, PropertyType
+
+with Camera.open(0) as cam:
+    for item in cam.snapshot_properties():
+        print(item)
+
+    cam.set_property_abs(PropertyType.SHUTTER, 5.0, auto=False)
+    cam.set_property_abs(PropertyType.GAIN, 0.0, auto=False)
+```
+
+Use convenience setters for common controls:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_shutter(5.0, auto=False)
+    cam.set_gain(0.0, auto=False)
+    cam.set_brightness(1.0, auto=False)
+    cam.set_gamma(1.0, auto=False)
+    cam.set_white_balance(value_a=512, value_b=512, auto=False)
+```
+
+Property API layers:
+
+- `get_property_raw()` / `set_property_raw()` are close to `fc2Property` and intended for advanced callers.
+- `set_property_abs()`, `set_property_integer()`, `set_property_on_off()`, `set_property_auto()`, and `set_property_one_push()` validate camera support and ranges before writing.
+- `set_shutter()`, `set_gain()`, `set_brightness()`, and similar methods are convenience wrappers over the safe generic API.
+- Trigger source/mode/polarity use the dedicated trigger mode API.
+- Trigger delay uses the property API as `PropertyType.TRIGGER_DELAY`.
+
 ## Notes
 
 - `Camera.enable_trigger()` and `Camera.disable_trigger()` use FlyCapture2's dedicated trigger mode API, not GUI APIs.
 - `Camera.set_trigger_mode()` accepts and returns a `TriggerMode` dataclass so scripts can save and restore camera state.
 - `Camera.set_format7()`, `Camera.set_roi()`, and `Camera.set_pixel_format()` use camera-side Format7 configuration, not Python-side crop logic.
+- `Camera.snapshot_properties()` replaces GUI-based camera property inspection.
 - Software trigger firing is not implemented yet; only trigger mode configuration is covered.
 - GigE, strobe, GPIO, callbacks, and register access are still deferred.

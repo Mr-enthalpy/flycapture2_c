@@ -29,8 +29,10 @@ This project intentionally wraps only a narrow subset of the FlyCapture2 C API.
 ## Properties
 
 - `fc2GetPropertyInfo()` -> `Camera.get_property_info()`
-- `fc2GetProperty()` -> `Camera.get_property()`
-- `fc2SetProperty()` -> advanced `Camera.set_property()`
+- `fc2GetPropertyInfo()` for all known property types -> `Camera.list_property_infos()`, `Camera.snapshot_properties()`
+- `fc2GetProperty()` -> `Camera.get_property()`, `Camera.get_property_raw()`, `Camera.list_properties()`
+- `fc2SetProperty()` -> advanced `Camera.set_property()`, `Camera.set_property_raw()`
+- `fc2SetProperty()` with strict validation -> `Camera.set_property_abs()`, `Camera.set_property_integer()`, `Camera.set_property_on_off()`, `Camera.set_property_auto()`, `Camera.set_property_one_push()`
 
 High-level convenience mapping:
 
@@ -42,13 +44,22 @@ High-level convenience mapping:
 - `fc2SetProperty(FC2_GAIN)` -> `Camera.set_gain()`
 - `fc2GetProperty(FC2_FRAME_RATE)` -> `Camera.get_frame_rate()`
 - `fc2SetProperty(FC2_FRAME_RATE)` -> `Camera.set_frame_rate()`
+- `fc2GetProperty(FC2_BRIGHTNESS)` -> `Camera.get_brightness()`
+- `fc2SetProperty(FC2_BRIGHTNESS)` -> `Camera.set_brightness()`
+- `fc2GetProperty(FC2_GAMMA)` -> `Camera.get_gamma()`
+- `fc2SetProperty(FC2_GAMMA)` -> `Camera.set_gamma()`
+- `fc2GetProperty(FC2_WHITE_BALANCE)` -> `Camera.get_white_balance()`
+- `fc2SetProperty(FC2_WHITE_BALANCE)` -> `Camera.set_white_balance()`
+- `fc2GetProperty(FC2_TRIGGER_DELAY)` -> `Camera.get_trigger_delay()`
+- `fc2SetProperty(FC2_TRIGGER_DELAY)` -> `Camera.set_trigger_delay()`
+- `fc2GetProperty(FC2_TEMPERATURE)` -> `Camera.get_temperature()`
 
 Property write policy:
 
-- high-level writes are intentionally limited to `AUTO_EXPOSURE`, `SHUTTER`, `GAIN`, and `FRAME_RATE`
-- high-level writes run strict support, range, and mode checks before calling the SDK
-- `Camera.set_property()` is retained as an advanced low-level API
-- low-level `policy="raw"` is available for advanced callers; convenience APIs do not expose it
+- generic safe writes are available for all known `PropertyType` values when the camera reports support
+- safe writes run present, capability, mode, and range checks before calling the SDK
+- `Camera.set_property(..., policy="raw")` and `Camera.set_property_raw()` are retained for advanced low-policy writes
+- `TRIGGER_MODE` has a dedicated trigger API; `TRIGGER_DELAY` remains part of the property API
 
 ## Trigger
 

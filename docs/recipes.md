@@ -147,3 +147,63 @@ with Camera.open(0) as cam:
             packet_size=old_format7.packet_size,
         )
 ```
+
+## Set Common Properties Without GUI
+
+```python
+from flycapture2_c import Camera, PropertyType
+
+with Camera.open(0) as cam:
+    cam.set_property_abs(PropertyType.SHUTTER, 5.0, auto=False)
+    cam.set_property_abs(PropertyType.GAIN, 0.0, auto=False)
+```
+
+Convenience methods remain available:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_shutter(5.0, auto=False)
+    cam.set_gain(0.0, auto=False)
+    cam.set_brightness(1.0, auto=False)
+    cam.set_gamma(1.0, auto=False)
+```
+
+## Set White Balance
+
+White balance uses the SDK integer `valueA` and `valueB` fields, not `absValue`.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_white_balance(value_a=512, value_b=512, auto=False)
+```
+
+## Inspect Properties Without GUI
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    for item in cam.snapshot_properties():
+        print(item)
+```
+
+`snapshot_properties()` returns dataclasses containing the property type, property info, current value when readable, and any per-property error.
+
+## Trigger Mode vs Trigger Delay
+
+Use the dedicated trigger mode API for trigger source, mode, polarity, and enable/disable:
+
+```python
+cam.enable_trigger(source=0, mode=0)
+cam.disable_trigger()
+```
+
+Use the property API for trigger delay:
+
+```python
+cam.set_trigger_delay(0.5, auto=False)
+```

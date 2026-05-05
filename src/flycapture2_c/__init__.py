@@ -26,6 +26,7 @@ __all__ = [
     "CameraDescriptor",
     "CameraStateError",
     "CameraPropertyInfo",
+    "CameraPropertySnapshot",
     "CameraPropertyValue",
     "DLLLoadError",
     "FlyCapture2Error",
@@ -71,6 +72,10 @@ def __getattr__(name: str):
         from .properties import CameraPropertyInfo
 
         return CameraPropertyInfo
+    if name == "CameraPropertySnapshot":
+        from .properties import CameraPropertySnapshot
+
+        return CameraPropertySnapshot
     if name == "CameraPropertyValue":
         from .properties import CameraPropertyValue
 
