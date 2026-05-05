@@ -511,8 +511,9 @@ Stage 4  full property system
 Stage 4.5 architecture/documentation stabilization:
           README sync, docs/roadmap.md, raw binding infrastructure,
           API coverage consistency, no new hardware feature surface
-Stage 5  task-level acquisition helpers
-Stage 6  GigE, strobe, GPIO, embedded metadata, diagnostics
+Stage 5A embedded metadata and diagnostics
+Stage 5B strobe / GPIO
+Stage 6  GigE-specific controls
 Stage 7  broad raw SDK coverage
 Stage 8  migration documentation from pyflycap2 / PyCapture2
 Stage 9  release stabilization

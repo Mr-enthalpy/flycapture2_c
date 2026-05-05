@@ -7,6 +7,7 @@ import numpy as np
 
 from .ctypes_defs import fc2Image, fc2TimeStamp
 from .errors import FlyCapture2Error
+from .metadata import ImageMetadata
 from .pixel_format import PixelFormat, bytes_per_pixel, from_sdk_value, numpy_dtype
 from .typing import FrameArray
 
@@ -19,6 +20,7 @@ class ImageFrame:
     stride: int
     pixel_format: PixelFormat
     timestamp: fc2TimeStamp | None = None
+    metadata: ImageMetadata | None = None
 
 
 def image_to_array(image: fc2Image) -> FrameArray:
@@ -26,7 +28,11 @@ def image_to_array(image: fc2Image) -> FrameArray:
     return frame.array
 
 
-def image_to_frame(image: fc2Image, timestamp: fc2TimeStamp | None = None) -> ImageFrame:
+def image_to_frame(
+    image: fc2Image,
+    timestamp: fc2TimeStamp | None = None,
+    metadata: ImageMetadata | None = None,
+) -> ImageFrame:
     pixel_format = from_sdk_value(int(image.format))
     height = int(image.rows)
     width = int(image.cols)
@@ -54,4 +60,5 @@ def image_to_frame(image: fc2Image, timestamp: fc2TimeStamp | None = None) -> Im
         stride=stride,
         pixel_format=pixel_format,
         timestamp=timestamp,
+        metadata=metadata,
     )

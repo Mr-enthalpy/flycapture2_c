@@ -14,9 +14,14 @@ Current capabilities:
 - Format7, ROI, and camera pixel-format configuration
 - SDK capture configuration, including grab timeout and grab mode
 - generic FlyCapture2 property inspection and safe property writing
+- embedded image metadata inspection/configuration and frame metadata readback
+- camera diagnostic statistics readback, with write-gated stats reset support when the SDK exports it
 - convenience property methods for common controls such as exposure, shutter, gain, frame rate, brightness, gamma, white balance, trigger delay, and temperature readback
 - mock camera support and default no-hardware tests
 - opt-in hardware smoke and hardware pytest suites
+
+Current stage: Stage 5A embedded metadata and diagnostics are complete. The next
+focused stage is Stage 5B strobe/GPIO.
 
 The implementation is moving toward a two-layer architecture:
 

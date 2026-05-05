@@ -11,6 +11,7 @@ from flycapture2_c.ctypes_defs import (
     fc2Config,
     fc2Context,
     fc2Error,
+    fc2ImageMetadata,
     fc2Format7ImageSettings,
     fc2Format7Info,
     fc2Format7PacketInfo,
@@ -21,6 +22,7 @@ from flycapture2_c.ctypes_defs import (
     fc2TriggerMode,
     fc2TriggerModeInfo,
 )
+from flycapture2_c.raw.structs import fc2CameraStats, fc2EmbeddedImageInfo
 from flycapture2_c.raw.specs import FUNCTION_SPECS, FunctionSpec, bind_function_specs
 
 
@@ -50,8 +52,12 @@ def test_raw_specs_cover_current_binding_surface() -> None:
         "fc2GetPropertyInfo",
         "fc2GetProperty",
         "fc2SetProperty",
+        "fc2GetEmbeddedImageInfo",
+        "fc2SetEmbeddedImageInfo",
         "fc2GetConfiguration",
         "fc2SetConfiguration",
+        "fc2GetStats",
+        "ResetStats",
         "fc2GetFormat7Info",
         "fc2ValidateFormat7Settings",
         "fc2GetFormat7Configuration",
@@ -71,6 +77,7 @@ def test_raw_specs_cover_current_binding_surface() -> None:
         "fc2DestroyImage",
         "fc2GetImageDimensions",
         "fc2GetImageData",
+        "fc2GetImageMetadata",
         "fc2GetImageTimeStamp",
         "fc2GetVideoModeAndFrameRate",
         "fc2GetLibraryVersion",
@@ -99,6 +106,21 @@ def test_raw_specs_have_expected_representative_signatures() -> None:
         ctypes.POINTER(fc2Format7PacketInfo),
     ]
     assert FUNCTION_SPECS["fc2GetConfiguration"].argtypes == [fc2Context, ctypes.POINTER(fc2Config)]
+    assert FUNCTION_SPECS["fc2GetEmbeddedImageInfo"].argtypes == [
+        fc2Context,
+        ctypes.POINTER(fc2EmbeddedImageInfo),
+    ]
+    assert FUNCTION_SPECS["fc2SetEmbeddedImageInfo"].argtypes == [
+        fc2Context,
+        ctypes.POINTER(fc2EmbeddedImageInfo),
+    ]
+    assert FUNCTION_SPECS["fc2GetStats"].argtypes == [fc2Context, ctypes.POINTER(fc2CameraStats)]
+    assert FUNCTION_SPECS["ResetStats"].argtypes == []
+    assert FUNCTION_SPECS["ResetStats"].required is False
+    assert FUNCTION_SPECS["fc2GetImageMetadata"].argtypes == [
+        ctypes.POINTER(fc2Image),
+        ctypes.POINTER(fc2ImageMetadata),
+    ]
     assert FUNCTION_SPECS["fc2RetrieveBuffer"].argtypes == [fc2Context, ctypes.POINTER(fc2Image)]
     assert FUNCTION_SPECS["fc2Connect"].argtypes == [fc2Context, ctypes.POINTER(fc2PGRGuid)]
 
@@ -116,6 +138,21 @@ def test_bind_function_specs_assigns_argtypes_and_restype() -> None:
     ]
     assert dll.fc2ErrorToDescription.restype is ctypes.c_char_p
     assert set(FUNCTION_SPECS) <= set(dll.functions)
+
+
+def test_bind_function_specs_allows_missing_optional_functions() -> None:
+    class OptionalMissingDLL(_FakeDLL):
+        def __getattr__(self, name: str) -> _FakeFunction:
+            if name == "ResetStats":
+                raise AttributeError(name)
+            return super().__getattr__(name)
+
+    dll = OptionalMissingDLL()
+
+    bind_function_specs(dll)
+
+    assert "ResetStats" not in dll.functions
+    assert dll.fc2GetStats.argtypes == [fc2Context, ctypes.POINTER(fc2CameraStats)]
 
 
 def test_flycapture2capi_bind_uses_raw_specs_registry() -> None:

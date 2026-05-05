@@ -117,6 +117,10 @@ class CameraConfigurationError(FlyCapture2Error):
     pass
 
 
+class UnsupportedMetadataError(FlyCapture2Error):
+    pass
+
+
 class FlyCapture2Failure(FlyCapture2Error):
     pass
 

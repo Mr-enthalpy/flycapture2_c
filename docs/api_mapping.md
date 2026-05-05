@@ -5,6 +5,9 @@ lifecycle, acquisition, trigger mode, Format7/ROI/pixel format, SDK capture
 configuration, and the generic property system. It does not claim full SDK
 coverage.
 
+Stage 5A embedded metadata and diagnostics are implemented. Stage 5B is
+strobe/GPIO control.
+
 ## Raw binding infrastructure
 
 - current function signatures are registered in `flycapture2_c.raw.specs`
@@ -34,7 +37,12 @@ coverage.
 - `fc2StartCapture()` -> `Camera.start()`
 - `fc2StopCapture()` -> `Camera.stop()`
 - `fc2RetrieveBuffer()` -> `Camera.read_frame()`, `Camera.read_frame_with_info()`
+- `fc2GetImageMetadata()` -> `Camera.read_frame_with_info().metadata`
 - `fc2GetImageTimeStamp()` -> `Camera.read_frame_with_info()`
+
+`Camera.read_frame()` still returns only the owned NumPy array. Use
+`Camera.read_frame_with_info()` when timestamp and embedded frame metadata are
+needed.
 
 ## Properties
 
@@ -98,6 +106,23 @@ High-level ROI is camera-side Format7 configuration, not Python-side image cropp
 - `fc2SetConfiguration()` -> `Camera.set_configuration()`, `Camera.set_grab_timeout()`, `Camera.set_grab_mode()`
 
 `Camera.set_grab_timeout(ms)` sets the SDK-level `RetrieveBuffer()` timeout. It is separate from `FLYCAPTURE2_CAPTURE_TIMEOUT_MS`, which remains a Python-side smoke-test guard.
+
+## Embedded Image Metadata and Diagnostics
+
+- `fc2GetEmbeddedImageInfo()` -> `Camera.get_embedded_image_info()`
+- `fc2SetEmbeddedImageInfo()` -> `Camera.set_embedded_image_info(...)`
+- `fc2GetImageMetadata()` -> `ImageFrame.metadata`
+- `fc2GetStats()` -> `Camera.get_camera_stats()`
+- `ResetStats()` -> `Camera.reset_camera_stats()`
+
+Embedded image info exposes both field availability and on/off state. Enabling a
+field is camera-model-dependent; the high-level API raises a typed error if a
+caller explicitly enables or disables an unavailable field.
+
+`ResetStats()` is declared by this SDK without an `fc2` prefix or camera context.
+The raw binding treats it as optional, and the high-level reset method is a
+write-like diagnostic operation. Hardware tests for it require
+`FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
 
 ## Error handling
 

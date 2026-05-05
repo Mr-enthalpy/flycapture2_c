@@ -2,6 +2,9 @@
 
 These examples use only the FlyCapture2 C API wrapper. They do not require any GUI path.
 
+Status note: Stage 5A embedded metadata and diagnostics are implemented. Stage
+5B strobe/GPIO is the next planned stage.
+
 ## Configure External Hardware Trigger
 
 Trigger source `0` is the common GPIO external trigger source used by FlyCapture2 examples. Polarity is camera and wiring dependent; pass it explicitly when needed.
@@ -207,3 +210,55 @@ Use the property API for trigger delay:
 ```python
 cam.set_trigger_delay(0.5, auto=False)
 ```
+
+## Inspect Embedded Image Metadata Support
+
+Embedded metadata support is camera-model-dependent. Availability and enabled
+state are separate values.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    info = cam.get_embedded_image_info()
+    print(info)
+```
+
+## Capture a Frame With Embedded Metadata
+
+Save the original embedded metadata state before changing it, then restore it in
+`finally`.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old = cam.get_embedded_image_info()
+    try:
+        cam.set_embedded_image_info(timestamp=True, frame_counter=True)
+        cam.start()
+        frame = cam.read_frame_with_info()
+        print(frame.metadata)
+    finally:
+        cam.stop()
+        cam.set_embedded_image_info(old)
+```
+
+`frame.metadata` is an `ImageMetadata` dataclass copied from the SDK image
+metadata structure. If a field is not enabled or unsupported by the camera, its
+raw SDK metadata value may remain zero. If the SDK reports image metadata as not
+supported, `frame.metadata` is `None`.
+
+## Inspect Camera Diagnostic Stats
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    stats = cam.get_camera_stats()
+    print(stats)
+```
+
+`Camera.reset_camera_stats()` resets diagnostic counters and should be treated as
+a write-like operation. Hardware tests for it require
+`FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.

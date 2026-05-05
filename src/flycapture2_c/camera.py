@@ -28,6 +28,12 @@ from .format7 import (
     normalize_format7_mode,
 )
 from .image import ImageFrame, image_to_frame
+from .metadata import (
+    CameraStats,
+    EmbeddedImageInfo,
+    ImageMetadata,
+    validate_embedded_image_info_updates,
+)
 from .pixel_format import PixelFormat, normalize_pixel_format
 from .properties import (
     CameraPropertyInfo,
@@ -217,7 +223,17 @@ class Camera:
         assert self._context is not None
         assert self._image is not None
         self._api.retrieve_buffer(self._context, self._image)
-        frame = image_to_frame(self._image, timestamp=self._api.get_image_timestamp(self._image))
+        try:
+            metadata = ImageMetadata.from_c(self._api.get_image_metadata(self._image))
+        except FlyCapture2Error as exc:
+            if exc.code not in {FC2ErrorCode.NOT_IMPLEMENTED, FC2ErrorCode.NOT_SUPPORTED}:
+                raise
+            metadata = None
+        frame = image_to_frame(
+            self._image,
+            timestamp=self._api.get_image_timestamp(self._image),
+            metadata=metadata,
+        )
         self._last_frame = frame
         return frame
 
@@ -232,6 +248,59 @@ class Camera:
         self._require_open()
         assert self._context is not None
         return self._api.get_video_mode_and_frame_rate(self._context)
+
+    def get_embedded_image_info(self) -> EmbeddedImageInfo:
+        self._require_open()
+        assert self._context is not None
+        return EmbeddedImageInfo.from_c(self._api.get_embedded_image_info(self._context))
+
+    def set_embedded_image_info(
+        self,
+        info: EmbeddedImageInfo | None = None,
+        *,
+        timestamp: bool | None = None,
+        gain: bool | None = None,
+        shutter: bool | None = None,
+        brightness: bool | None = None,
+        exposure: bool | None = None,
+        white_balance: bool | None = None,
+        frame_counter: bool | None = None,
+        strobe_pattern: bool | None = None,
+        gpio_pin_state: bool | None = None,
+        roi_position: bool | None = None,
+    ) -> EmbeddedImageInfo:
+        self._require_open()
+        assert self._context is not None
+        base = info or self.get_embedded_image_info()
+        updates = {
+            "timestamp": timestamp,
+            "gain": gain,
+            "shutter": shutter,
+            "brightness": brightness,
+            "exposure": exposure,
+            "white_balance": white_balance,
+            "frame_counter": frame_counter,
+            "strobe_pattern": strobe_pattern,
+            "gpio_pin_state": gpio_pin_state,
+            "roi_position": roi_position,
+        }
+        validate_embedded_image_info_updates(base, updates)
+        desired = base.with_updates(**updates)
+        self._api.set_embedded_image_info(self._context, desired.to_c())
+        return self.get_embedded_image_info()
+
+    def get_camera_stats(self) -> CameraStats:
+        self._require_open()
+        assert self._context is not None
+        return CameraStats.from_c(self._api.get_camera_stats(self._context))
+
+    def reset_camera_stats(self) -> None:
+        """Reset FlyCapture2 diagnostic counters.
+
+        This is a write-like diagnostic operation and should be used deliberately.
+        """
+        self._require_open()
+        self._api.reset_camera_stats()
 
     def get_configuration(self) -> CameraConfiguration:
         self._require_open()

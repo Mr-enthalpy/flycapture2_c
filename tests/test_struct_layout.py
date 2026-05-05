@@ -8,10 +8,12 @@ from flycapture2_c.ctypes_defs import (
     fc2Format7Info,
     fc2Format7PacketInfo,
     fc2Image,
+    fc2ImageMetadata,
     fc2PGRGuid,
     fc2TriggerMode,
     fc2TriggerModeInfo,
 )
+from flycapture2_c.raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2EmbeddedImageInfoProperty
 
 
 def test_fc2_pgr_guid_layout() -> None:
@@ -143,3 +145,76 @@ def test_fc2_config_layout() -> None:
     assert ctypes.sizeof(fc2Config) == 108
     for field_name, offset in expected_offsets.items():
         assert getattr(fc2Config, field_name).offset == offset
+
+
+def test_fc2_embedded_image_info_property_layout() -> None:
+    assert ctypes.sizeof(fc2EmbeddedImageInfoProperty) == 8
+    assert fc2EmbeddedImageInfoProperty.available.offset == 0
+    assert fc2EmbeddedImageInfoProperty.onOff.offset == 4
+
+
+def test_fc2_embedded_image_info_layout() -> None:
+    expected_offsets = {
+        "timestamp": 0,
+        "gain": 8,
+        "shutter": 16,
+        "brightness": 24,
+        "exposure": 32,
+        "whiteBalance": 40,
+        "frameCounter": 48,
+        "strobePattern": 56,
+        "GPIOPinState": 64,
+        "ROIPosition": 72,
+    }
+
+    assert ctypes.sizeof(fc2EmbeddedImageInfo) == 80
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2EmbeddedImageInfo, field_name).offset == offset
+
+
+def test_fc2_image_metadata_layout() -> None:
+    expected_offsets = {
+        "embeddedTimeStamp": 0,
+        "embeddedGain": 4,
+        "embeddedShutter": 8,
+        "embeddedBrightness": 12,
+        "embeddedExposure": 16,
+        "embeddedWhiteBalance": 20,
+        "embeddedFrameCounter": 24,
+        "embeddedStrobePattern": 28,
+        "embeddedGPIOPinState": 32,
+        "embeddedROIPosition": 36,
+        "reserved": 40,
+    }
+
+    assert ctypes.sizeof(fc2ImageMetadata) == 164
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2ImageMetadata, field_name).offset == offset
+
+
+def test_fc2_camera_stats_layout() -> None:
+    expected_offsets = {
+        "imageDropped": 0,
+        "imageCorrupt": 4,
+        "imageXmitFailed": 8,
+        "imageDriverDropped": 12,
+        "regReadFailed": 16,
+        "regWriteFailed": 20,
+        "portErrors": 24,
+        "cameraPowerUp": 28,
+        "cameraVoltages": 32,
+        "numVoltages": 64,
+        "cameraCurrents": 68,
+        "numCurrents": 100,
+        "temperature": 104,
+        "timeSinceInitialization": 108,
+        "timeSinceBusReset": 112,
+        "timeStamp": 120,
+        "numResendPacketsRequested": 176,
+        "numResendPacketsReceived": 180,
+        "reserved": 184,
+    }
+
+    assert ctypes.sizeof(fc2CameraStats) == 248
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2CameraStats, field_name).offset == offset
