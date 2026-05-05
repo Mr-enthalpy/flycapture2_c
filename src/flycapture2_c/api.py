@@ -26,6 +26,7 @@ from .ctypes_defs import (
 )
 from .dll import load_library
 from .errors import FC2ErrorCode, raise_for_error
+from .raw.specs import bind_function_specs
 
 
 class FlyCapture2CAPI:
@@ -43,133 +44,7 @@ class FlyCapture2CAPI:
         return self._dll
 
     def _bind(self, dll: ctypes.CDLL) -> None:
-        dll.fc2CreateContext.argtypes = [ctypes.POINTER(fc2Context)]
-        dll.fc2CreateContext.restype = fc2Error
-
-        dll.fc2DestroyContext.argtypes = [fc2Context]
-        dll.fc2DestroyContext.restype = fc2Error
-
-        dll.fc2GetNumOfCameras.argtypes = [fc2Context, ctypes.POINTER(ctypes.c_uint32)]
-        dll.fc2GetNumOfCameras.restype = fc2Error
-
-        dll.fc2GetCameraFromIndex.argtypes = [fc2Context, ctypes.c_uint32, ctypes.POINTER(fc2PGRGuid)]
-        dll.fc2GetCameraFromIndex.restype = fc2Error
-
-        dll.fc2GetCameraInfo.argtypes = [fc2Context, ctypes.POINTER(fc2CameraInfo)]
-        dll.fc2GetCameraInfo.restype = fc2Error
-
-        dll.fc2GetPropertyInfo.argtypes = [fc2Context, ctypes.POINTER(fc2PropertyInfo)]
-        dll.fc2GetPropertyInfo.restype = fc2Error
-
-        dll.fc2GetProperty.argtypes = [fc2Context, ctypes.POINTER(fc2Property)]
-        dll.fc2GetProperty.restype = fc2Error
-
-        dll.fc2SetProperty.argtypes = [fc2Context, ctypes.POINTER(fc2Property)]
-        dll.fc2SetProperty.restype = fc2Error
-
-        dll.fc2GetConfiguration.argtypes = [fc2Context, ctypes.POINTER(fc2Config)]
-        dll.fc2GetConfiguration.restype = fc2Error
-
-        dll.fc2SetConfiguration.argtypes = [fc2Context, ctypes.POINTER(fc2Config)]
-        dll.fc2SetConfiguration.restype = fc2Error
-
-        dll.fc2GetFormat7Info.argtypes = [fc2Context, ctypes.POINTER(fc2Format7Info), ctypes.POINTER(ctypes.c_int)]
-        dll.fc2GetFormat7Info.restype = fc2Error
-
-        dll.fc2ValidateFormat7Settings.argtypes = [
-            fc2Context,
-            ctypes.POINTER(fc2Format7ImageSettings),
-            ctypes.POINTER(ctypes.c_int),
-            ctypes.POINTER(fc2Format7PacketInfo),
-        ]
-        dll.fc2ValidateFormat7Settings.restype = fc2Error
-
-        dll.fc2GetFormat7Configuration.argtypes = [
-            fc2Context,
-            ctypes.POINTER(fc2Format7ImageSettings),
-            ctypes.POINTER(ctypes.c_uint32),
-            ctypes.POINTER(ctypes.c_float),
-        ]
-        dll.fc2GetFormat7Configuration.restype = fc2Error
-
-        dll.fc2SetFormat7ConfigurationPacket.argtypes = [
-            fc2Context,
-            ctypes.POINTER(fc2Format7ImageSettings),
-            ctypes.c_uint32,
-        ]
-        dll.fc2SetFormat7ConfigurationPacket.restype = fc2Error
-
-        dll.fc2SetFormat7Configuration.argtypes = [
-            fc2Context,
-            ctypes.POINTER(fc2Format7ImageSettings),
-            ctypes.c_float,
-        ]
-        dll.fc2SetFormat7Configuration.restype = fc2Error
-
-        dll.fc2GetTriggerModeInfo.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerModeInfo)]
-        dll.fc2GetTriggerModeInfo.restype = fc2Error
-
-        dll.fc2GetTriggerMode.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerMode)]
-        dll.fc2GetTriggerMode.restype = fc2Error
-
-        dll.fc2SetTriggerMode.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerMode)]
-        dll.fc2SetTriggerMode.restype = fc2Error
-
-        dll.fc2SetTriggerModeBroadcast.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerMode)]
-        dll.fc2SetTriggerModeBroadcast.restype = fc2Error
-
-        dll.fc2Connect.argtypes = [fc2Context, ctypes.POINTER(fc2PGRGuid)]
-        dll.fc2Connect.restype = fc2Error
-
-        dll.fc2Disconnect.argtypes = [fc2Context]
-        dll.fc2Disconnect.restype = fc2Error
-
-        dll.fc2IsConnected.argtypes = [fc2Context]
-        dll.fc2IsConnected.restype = ctypes.c_int
-
-        dll.fc2StartCapture.argtypes = [fc2Context]
-        dll.fc2StartCapture.restype = fc2Error
-
-        dll.fc2StopCapture.argtypes = [fc2Context]
-        dll.fc2StopCapture.restype = fc2Error
-
-        dll.fc2RetrieveBuffer.argtypes = [fc2Context, ctypes.POINTER(fc2Image)]
-        dll.fc2RetrieveBuffer.restype = fc2Error
-
-        dll.fc2CreateImage.argtypes = [ctypes.POINTER(fc2Image)]
-        dll.fc2CreateImage.restype = fc2Error
-
-        dll.fc2DestroyImage.argtypes = [ctypes.POINTER(fc2Image)]
-        dll.fc2DestroyImage.restype = fc2Error
-
-        dll.fc2GetImageDimensions.argtypes = [
-            ctypes.POINTER(fc2Image),
-            ctypes.POINTER(ctypes.c_uint32),
-            ctypes.POINTER(ctypes.c_uint32),
-            ctypes.POINTER(ctypes.c_uint32),
-            ctypes.POINTER(fc2PixelFormat),
-            ctypes.POINTER(ctypes.c_uint32),
-        ]
-        dll.fc2GetImageDimensions.restype = fc2Error
-
-        dll.fc2GetImageData.argtypes = [ctypes.POINTER(fc2Image), ctypes.POINTER(ctypes.POINTER(ctypes.c_ubyte))]
-        dll.fc2GetImageData.restype = fc2Error
-
-        dll.fc2GetImageTimeStamp.argtypes = [ctypes.POINTER(fc2Image)]
-        dll.fc2GetImageTimeStamp.restype = fc2TimeStamp
-
-        dll.fc2GetVideoModeAndFrameRate.argtypes = [
-            fc2Context,
-            ctypes.POINTER(fc2VideoMode),
-            ctypes.POINTER(fc2FrameRate),
-        ]
-        dll.fc2GetVideoModeAndFrameRate.restype = fc2Error
-
-        dll.fc2GetLibraryVersion.argtypes = [ctypes.POINTER(fc2Version)]
-        dll.fc2GetLibraryVersion.restype = fc2Error
-
-        dll.fc2ErrorToDescription.argtypes = [fc2Error]
-        dll.fc2ErrorToDescription.restype = ctypes.c_char_p
+        bind_function_specs(dll)
 
     def _error_description(self, code: int) -> str | None:
         raw = self.dll.fc2ErrorToDescription(code)
