@@ -53,7 +53,9 @@ Status: complete for the current project stage.
 - SDK capture configuration, grab timeout, and grab mode
 - opt-in reversible hardware tests for write paths
 
-Software trigger firing is intentionally not included yet.
+Software trigger mode configuration is implemented here. Firing a software
+trigger is split out into Stage 6A so it can be implemented as a focused SDK
+primitive without experiment orchestration.
 
 ## Stage 4: Property System
 
@@ -106,11 +108,39 @@ Implemented:
 GPIO pin-state observation remains part of embedded image metadata. Broader GPIO
 behavior through register access is intentionally deferred.
 
-## Stage 6+: Future Expansion
+## Stage 6A: Software Trigger Firing
+
+Status: next focused stage.
+
+Planned scope:
+
+- query current trigger mode
+- configure software trigger source/mode through the existing trigger API
+- bind and expose the FlyCapture2 C SDK call that fires a software trigger
+- start capture and retrieve a frame after a software trigger
+- add no-hardware tests and opt-in hardware validation
+
+Boundaries:
+
+- no experiment scheduling
+- no repeated trigger workflow runner
+- no external device synchronization
+- no GUI, sidecar, shared memory, ZMQ, IPC, or `optic_system` backend
+
+## Stage 6B: GigE-Specific Controls
+
+Status: deferred until after Stage 6A.
+
+Planned direction:
+
+- query GigE-specific configuration where the C SDK exposes it
+- expose carefully scoped setters with reversible hardware tests where possible
+- keep GigE support camera-local and independent from experiment orchestration
+
+## Stage 7+: Future Expansion
 
 Prioritized future areas:
 
-- GigE-specific controls
 - task-level acquisition helpers, such as bounded frame iterators and restore-state patterns
 - register access as an advanced API
 - callbacks and events

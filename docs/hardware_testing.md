@@ -3,7 +3,8 @@
 Hardware access is always opt-in.
 
 Stage 5B strobe/GPIO hardware coverage is present. The next hardware-facing
-stage is Stage 6 GigE-specific controls.
+stage is Stage 6A software trigger firing. GigE-specific controls are deferred
+to Stage 6B.
 
 Environment variables:
 
@@ -82,6 +83,12 @@ FLYCAPTURE2_HARDWARE_TEST=1
 FLYCAPTURE2_HARDWARE_WRITE_TEST=1
 python -m pytest tests/hardware/test_hardware_strobe_gpio_write_reversible.py
 ```
+
+Planned Stage 6A software trigger firing tests should remain opt-in. Readonly
+coverage can query trigger/software-trigger capability with
+`FLYCAPTURE2_HARDWARE_TEST=1`; any test that changes trigger mode or fires a
+software trigger must remain explicitly gated and must not become an experiment
+workflow or external-device synchronization test.
 
 Notes:
 

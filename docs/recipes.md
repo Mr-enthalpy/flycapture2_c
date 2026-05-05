@@ -2,8 +2,9 @@
 
 These examples use only the FlyCapture2 C API wrapper. They do not require any GUI path.
 
-Status note: Stage 5B strobe/GPIO control is implemented. Strobe and GPIO
-availability are camera-model-dependent and wiring-dependent.
+Status note: Stage 5B strobe/GPIO control is implemented. Stage 6A is software
+trigger firing. Strobe and GPIO availability are camera-model-dependent and
+wiring-dependent.
 
 ## Configure External Hardware Trigger
 
@@ -29,7 +30,10 @@ with Camera.open(index=0) as cam:
 
 ## Configure Software Trigger Mode
 
-FlyCapture2 conventionally uses source `7` for software trigger mode. This wrapper currently configures the trigger mode; firing a software trigger is a separate SDK call and is not part of this milestone.
+FlyCapture2 conventionally uses source `7` for software trigger mode. The
+current wrapper configures software trigger mode. Stage 6A will add the SDK call
+that fires a software trigger; that remains a camera-local SDK operation, not an
+experiment scheduler or external-device synchronization workflow.
 
 ```python
 from flycapture2_c import Camera
@@ -49,6 +53,30 @@ with Camera.open(index=0) as cam:
     finally:
         cam.set_trigger_mode(old_trigger)
 ```
+
+## Planned Software Trigger Firing Pattern
+
+Stage 6A should support this no-GUI SDK-level sequence once the vendor C header
+function is bound:
+
+```python
+from flycapture2_c import Camera
+from flycapture2_c.trigger import SOFTWARE_TRIGGER_SOURCE
+
+with Camera.open(index=0) as cam:
+    old_trigger = cam.get_trigger_mode()
+    try:
+        cam.enable_trigger(source=SOFTWARE_TRIGGER_SOURCE, mode=0, parameter=0)
+        cam.start()
+        cam.fire_software_trigger()
+        frame = cam.read_frame()
+    finally:
+        cam.stop()
+        cam.set_trigger_mode(old_trigger)
+```
+
+The wrapper should only provide the SDK primitive. Timing policies, repeated
+trigger schedules, and external-device coordination belong outside this project.
 
 ## Disable Trigger Mode
 

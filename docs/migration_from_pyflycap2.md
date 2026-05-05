@@ -2,9 +2,10 @@
 
 This project replaces GUI-dependent camera setup with direct FlyCapture2 C API calls through Python.
 
-Current status: Stage 5B strobe/GPIO control is implemented. GPIO scope is
-limited to direct FlyCapture2 C API pin-direction helpers and embedded
-metadata readback; register-level GPIO control is not wrapped.
+Current status: Stage 5B strobe/GPIO control is implemented. Stage 6A is
+software trigger firing. GPIO scope is limited to direct FlyCapture2 C API
+pin-direction helpers and embedded metadata readback; register-level GPIO
+control is not wrapped.
 
 ## Replace GUI-Based Trigger Configuration
 
@@ -232,5 +233,5 @@ with Camera.open(0) as cam:
 - `Camera.snapshot_properties()` replaces GUI-based camera property inspection.
 - `Camera.get_embedded_image_info()` and `Camera.read_frame_with_info().metadata` replace GUI-based embedded metadata inspection.
 - `Camera.get_strobe_info()`, `Camera.get_strobe()`, and `Camera.set_strobe()` replace GUI-based strobe source inspection and configuration.
-- Software trigger firing is not implemented yet; only trigger mode configuration is covered.
-- GigE, callbacks, register access, and broader GPIO control are still deferred.
+- Software trigger firing is the next focused stage. It should remain an SDK-level camera operation, not an experiment scheduler.
+- GigE-specific controls are deferred to Stage 6B. Callbacks, register access, and broader GPIO control are still deferred.

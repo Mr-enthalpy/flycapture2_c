@@ -23,7 +23,8 @@ Current capabilities:
 - opt-in hardware smoke and hardware pytest suites
 
 Current stage: Stage 5B strobe/GPIO control is complete. The next focused
-hardware-control stage is Stage 6 GigE-specific controls.
+hardware-control stage is Stage 6A software trigger firing. GigE-specific
+controls are deferred to Stage 6B.
 
 The implementation is moving toward a two-layer architecture:
 
