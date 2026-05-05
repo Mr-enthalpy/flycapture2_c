@@ -23,6 +23,7 @@ from .properties import (
     SUPPORTED_HIGH_LEVEL_WRITE_PROPERTIES,
     normalize_property_type,
 )
+from .trigger import TriggerMode, TriggerModeInfo, validate_trigger_mode_request
 from .typing import FrameArray
 
 
@@ -216,6 +217,90 @@ class Camera:
         self._require_open()
         assert self._context is not None
         return self._api.get_video_mode_and_frame_rate(self._context)
+
+    def get_trigger_mode_info(self) -> TriggerModeInfo:
+        self._require_open()
+        assert self._context is not None
+        return TriggerModeInfo.from_c(self._api.get_trigger_mode_info(self._context))
+
+    def get_trigger_mode(self) -> TriggerMode:
+        self._require_open()
+        assert self._context is not None
+        return TriggerMode.from_c(self._api.get_trigger_mode(self._context))
+
+    def set_trigger_mode(
+        self,
+        trigger_mode: TriggerMode | None = None,
+        *,
+        on_off: bool | None = None,
+        polarity: int | None = None,
+        source: int | None = None,
+        mode: int | None = None,
+        parameter: int | None = None,
+        broadcast: bool = False,
+    ) -> TriggerMode:
+        self._require_open()
+        assert self._context is not None
+
+        changed_fields = {
+            field_name
+            for field_name, value in (
+                ("on_off", on_off),
+                ("polarity", polarity),
+                ("source", source),
+                ("mode", mode),
+                ("parameter", parameter),
+            )
+            if value is not None
+        }
+        if trigger_mode is None:
+            desired = self.get_trigger_mode().with_updates(
+                on_off=on_off,
+                polarity=polarity,
+                source=source,
+                mode=mode,
+                parameter=parameter,
+            )
+        else:
+            # A TriggerMode captured from the SDK must remain restorable even if a
+            # camera reports incomplete masks. Explicit keyword overrides are still checked.
+            desired = trigger_mode.with_updates(
+                on_off=on_off,
+                polarity=polarity,
+                source=source,
+                mode=mode,
+                parameter=parameter,
+            )
+
+        info = self.get_trigger_mode_info()
+        validate_trigger_mode_request(info, desired, changed_fields=changed_fields)
+        if broadcast:
+            self._api.set_trigger_mode_broadcast(self._context, desired.to_c())
+        else:
+            self._api.set_trigger_mode(self._context, desired.to_c())
+        return self.get_trigger_mode()
+
+    def enable_trigger(
+        self,
+        *,
+        source: int = 0,
+        mode: int = 0,
+        parameter: int = 0,
+        polarity: int | None = None,
+        broadcast: bool = False,
+    ) -> TriggerMode:
+        updates: dict[str, int | bool] = {
+            "on_off": True,
+            "source": int(source),
+            "mode": int(mode),
+            "parameter": int(parameter),
+        }
+        if polarity is not None:
+            updates["polarity"] = int(polarity)
+        return self.set_trigger_mode(broadcast=broadcast, **updates)
+
+    def disable_trigger(self, *, broadcast: bool = False) -> TriggerMode:
+        return self.set_trigger_mode(on_off=False, broadcast=broadcast)
 
     def get_property_info(self, property_type: PropertyType | str | int) -> CameraPropertyInfo:
         self._require_open()

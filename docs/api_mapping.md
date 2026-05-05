@@ -50,6 +50,16 @@ Property write policy:
 - `Camera.set_property()` is retained as an advanced low-level API
 - low-level `policy="raw"` is available for advanced callers; convenience APIs do not expose it
 
+## Trigger
+
+- `fc2GetTriggerModeInfo()` -> `Camera.get_trigger_mode_info()`
+- `fc2GetTriggerMode()` -> `Camera.get_trigger_mode()`
+- `fc2SetTriggerMode()` -> `Camera.set_trigger_mode()`, `Camera.enable_trigger()`, `Camera.disable_trigger()`
+- `fc2SetTriggerModeBroadcast()` -> `Camera.set_trigger_mode(..., broadcast=True)`, `Camera.enable_trigger(..., broadcast=True)`, `Camera.disable_trigger(broadcast=True)`
+
+Trigger mode is exposed through dedicated `TriggerModeInfo` and `TriggerMode` dataclasses, not through the generic property API.
+This is intentional because FlyCapture2 uses dedicated trigger structures and functions for trigger configuration.
+
 ## Error handling
 
 Every wrapped FlyCapture2 return code is checked and converted into a typed Python exception from `flycapture2_c.errors`.

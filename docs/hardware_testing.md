@@ -26,10 +26,21 @@ FLYCAPTURE2_HARDWARE_WRITE_TEST=1
 python scripts/hardware_smoke.py --level write-property --report-json outputs/write_property.json
 ```
 
+Trigger control hardware tests:
+
+```powershell
+FLYCAPTURE2_HARDWARE_TEST=1 python -m pytest tests/hardware/test_hardware_trigger_readonly.py
+
+FLYCAPTURE2_HARDWARE_TEST=1
+FLYCAPTURE2_HARDWARE_WRITE_TEST=1
+python -m pytest tests/hardware/test_hardware_trigger_write_reversible.py
+```
+
 Notes:
 
 - default `pytest` skips all hardware tests
 - property write tests require both hardware opt-in flags
+- trigger write tests also require both hardware opt-in flags and restore the original trigger state
 - `FLYCAPTURE2_CAPTURE_TIMEOUT_MS` is currently a wall-clock threshold around `read_frame()`
 - it is not an SDK-internal grab timeout configuration
 - frame and sequence saves use `.npy` and do not depend on image libraries
