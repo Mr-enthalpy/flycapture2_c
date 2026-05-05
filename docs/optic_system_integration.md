@@ -5,7 +5,7 @@
 This repository only provides:
 
 - a Python wrapper around the FlyCapture2 C API
-- a stable narrow public API for camera enumeration, open/close, capture, and limited property access
+- stable public APIs for camera enumeration, lifecycle, capture, trigger mode, Format7/ROI/pixel format, SDK capture configuration, and camera properties
 
 `optic_system` integration belongs in the `optic_system` repository.
 

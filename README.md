@@ -1,28 +1,48 @@
 # flycapture2_c
 
-`flycapture2_c` is a narrow Python wrapper around the FlyCapture2 C API.
+`flycapture2_c` is a maintainable Python wrapper around the FlyCapture2 C API.
+It is intended to replace legacy `pyflycap2` / `PyCapture2` usage with a
+scriptable, non-GUI SDK wrapper.
 
-Scope:
+Current capabilities:
 
-- lazy DLL discovery and loading
-- camera enumeration and open/close
-- frame capture into owned NumPy arrays
-- limited camera metadata access
-- intentionally limited property access
+- lazy SDK/DLL discovery and loading
+- camera enumeration, open/close lifecycle, and context-manager support
+- start/stop capture and frame retrieval into owned NumPy arrays
+- camera metadata, video mode, and frame-rate readback
+- hardware trigger mode configuration without GUI
+- Format7, ROI, and camera pixel-format configuration
+- SDK capture configuration, including grab timeout and grab mode
+- generic FlyCapture2 property inspection and safe property writing
+- convenience property methods for common controls such as exposure, shutter, gain, frame rate, brightness, gamma, white balance, trigger delay, and temperature readback
+- mock camera support and default no-hardware tests
+- opt-in hardware smoke and hardware pytest suites
 
-Property writing is intentionally limited. The high-level API only provides strict convenience setters for:
+The implementation is moving toward a two-layer architecture:
 
-- `AUTO_EXPOSURE`
-- `SHUTTER`
-- `GAIN`
-- `FRAME_RATE`
+- `flycapture2_c.raw`: low-policy ctypes aliases, structures, function specs, DLL binding, and checked raw calls
+- high-level modules such as `Camera`, `trigger`, `format7`, `config`, and `properties`: stable task-oriented APIs for automated scripts
 
-This repository does not provide GUI code, sidecar processes, IPC/shared memory, ZMQ transport, `optic_system` backends, or experiment workflows.
+Default import remains lightweight:
 
-Hardware smoke and hardware tests are opt-in. See [docs/hardware_testing.md](docs/hardware_testing.md).
+```powershell
+python -c "import flycapture2_c"
+```
 
-Long-term note:
+Importing the package does not load the vendor DLL, enumerate cameras, or require
+the FlyCapture2 SDK to be installed.
 
-- this repository currently carries the active FlyCapture2 wrapper, tests, and hardware smoke tooling
-- later we may distill the wrapper into a separate, cleaner repository
-- that future migration does not change the current scope here: this project remains a FlyCapture2 C API wrapper plus its tests and smoke scripts
+Hardware smoke and hardware tests are opt-in. See
+[docs/hardware_testing.md](docs/hardware_testing.md).
+
+Project boundaries:
+
+- no GUI or preview UI
+- no sidecar process, IPC/shared memory, or ZMQ transport
+- no `optic_system` backend code
+- no experiment scheduling, calibration workflow, or reconstruction pipeline
+
+This repository currently carries the active FlyCapture2 wrapper, tests, docs,
+and hardware smoke tooling. A future distilled repository may be created from
+this work, but the current repository remains scoped to the FlyCapture2 C API
+wrapper and its own validation tools.

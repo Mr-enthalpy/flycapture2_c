@@ -1,6 +1,16 @@
 # API Mapping
 
-This project intentionally wraps only a narrow subset of the FlyCapture2 C API.
+This project wraps the FlyCapture2 C API incrementally. It currently covers
+lifecycle, acquisition, trigger mode, Format7/ROI/pixel format, SDK capture
+configuration, and the generic property system. It does not claim full SDK
+coverage.
+
+## Raw binding infrastructure
+
+- current function signatures are registered in `flycapture2_c.raw.specs`
+- `FunctionSpec` records the C function name, `argtypes`, `restype`, and category
+- the existing checked `FlyCapture2CAPI` remains the compatibility wrapper and binds DLL functions through that registry
+- future SDK expansion should add signatures to `raw/specs.py` rather than growing a monolithic binding block in `api.py`
 
 ## Context and bus
 

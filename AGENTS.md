@@ -95,7 +95,13 @@ Do not guess SDK structure layouts. All ctypes structures must be derived from t
 
 ## Package architecture
 
-Recommended package structure:
+The `raw/` package is a near-term architecture debt that must be paid down before
+new SDK areas are added. Do not continue adding function signatures directly to
+top-level `api.py` or expanding `ctypes_defs.py` as a monolithic binding surface.
+New raw SDK work should land in the raw-layer modules below, with compatibility
+bridges only where needed to preserve existing imports.
+
+Target package structure:
 
 ```text
 src/flycapture2_c/
@@ -502,6 +508,9 @@ Stage 1  raw binding infrastructure
 Stage 2  lifecycle and acquisition stability
 Stage 3  trigger, Format7, ROI, pixel format, capture config
 Stage 4  full property system
+Stage 4.5 architecture/documentation stabilization:
+          README sync, docs/roadmap.md, raw binding infrastructure,
+          API coverage consistency, no new hardware feature surface
 Stage 5  task-level acquisition helpers
 Stage 6  GigE, strobe, GPIO, embedded metadata, diagnostics
 Stage 7  broad raw SDK coverage
@@ -533,6 +542,11 @@ Default tests must run without:
 * installed FlyCapture2 SDK
 
 Hardware tests must be opt-in.
+
+Hardware is available for long-term validation, but default tests must remain
+no-hardware and no-SDK. Readonly hardware tests should be run for
+hardware-facing PRs when available. Write hardware tests remain gated by
+`FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
 
 Use environment variables such as:
 

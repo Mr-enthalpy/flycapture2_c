@@ -4,6 +4,7 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 
 | Category | Function | Structs required | Raw binding status | High-level API status | No-hardware test status | Hardware readonly test status | Hardware write test status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Raw infrastructure | current wrapped function signatures | `FunctionSpec` registry | `raw/specs.py` introduced | used by existing `FlyCapture2CAPI` binding path | covered | not-applicable | not-applicable | Stage 4.5 bridge; checked calls still live in top-level `api.py` for compatibility. |
 | Context | `fc2CreateContext` | `fc2Context` | raw-bound | internal lifecycle | covered | covered through opt-in enumerate/open tests | not-applicable | Lazy loaded. |
 | Context | `fc2DestroyContext` | `fc2Context` | raw-bound | internal lifecycle | covered | covered through opt-in enumerate/open tests | not-applicable | Cleanup path. |
 | Bus | `fc2GetNumOfCameras` | `fc2Context` | raw-bound | `enumerate_cameras`, `Camera.open` | covered | covered | not-applicable | Hardware tests remain opt-in. |
@@ -37,5 +38,6 @@ Deferred in this milestone:
 - GigE
 - strobe / GPIO
 - register access
-- trigger delay
 - software trigger firing
+- embedded metadata API
+- callbacks / events
