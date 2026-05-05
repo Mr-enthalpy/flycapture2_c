@@ -44,9 +44,63 @@ with Camera.open(index=0) as cam:
     print(info.software_trigger_supported)
 ```
 
+## Replace GUI-Based Pixel Format and ROI Configuration
+
+Legacy GUI workflows often configured Format7 mode, pixel format, and ROI manually. Use the wrapper directly:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_pixel_format("MONO8")
+    cam.set_roi(offset_x=0, offset_y=0, width=1024, height=768)
+    cam.start()
+    frame = cam.read_frame()
+```
+
+For scripts that must restore the previous camera state:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old_format7 = cam.get_format7_configuration()
+    try:
+        cam.set_format7(
+            mode=old_format7.settings.mode,
+            offset_x=0,
+            offset_y=0,
+            width=1024,
+            height=768,
+            pixel_format="MONO8",
+        )
+    finally:
+        cam.set_format7(
+            mode=old_format7.settings.mode,
+            offset_x=old_format7.settings.offset_x,
+            offset_y=old_format7.settings.offset_y,
+            width=old_format7.settings.width,
+            height=old_format7.settings.height,
+            pixel_format=old_format7.settings.pixel_format,
+            packet_size=old_format7.packet_size,
+        )
+```
+
+## Replace GUI-Based Grab Timeout Configuration
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_grab_timeout(1000)
+```
+
+This is the SDK-level `RetrieveBuffer()` timeout. It is separate from smoke-test timing guards such as `FLYCAPTURE2_CAPTURE_TIMEOUT_MS`.
+
 ## Notes
 
 - `Camera.enable_trigger()` and `Camera.disable_trigger()` use FlyCapture2's dedicated trigger mode API, not GUI APIs.
 - `Camera.set_trigger_mode()` accepts and returns a `TriggerMode` dataclass so scripts can save and restore camera state.
-- Software trigger firing is not implemented in this milestone; only trigger mode configuration is covered.
-- Format7, ROI, GigE, strobe, and register access are still deferred.
+- `Camera.set_format7()`, `Camera.set_roi()`, and `Camera.set_pixel_format()` use camera-side Format7 configuration, not Python-side crop logic.
+- Software trigger firing is not implemented yet; only trigger mode configuration is covered.
+- GigE, strobe, GPIO, callbacks, and register access are still deferred.

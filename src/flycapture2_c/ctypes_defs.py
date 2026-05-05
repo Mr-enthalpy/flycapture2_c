@@ -11,6 +11,10 @@ fc2PCIeBusSpeed = ctypes.c_int
 fc2PropertyType = ctypes.c_int
 fc2VideoMode = ctypes.c_int
 fc2FrameRate = ctypes.c_int
+fc2Mode = ctypes.c_int
+fc2GrabMode = ctypes.c_int
+fc2GrabTimeout = ctypes.c_int
+fc2BandwidthAllocation = ctypes.c_int
 fc2PixelFormat = ctypes.c_uint32
 fc2BayerTileFormat = ctypes.c_uint32
 
@@ -157,6 +161,63 @@ class fc2Property(ctypes.Structure):
         ("valueB", ctypes.c_uint32),
         ("absValue", ctypes.c_float),
         ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2Format7ImageSettings(ctypes.Structure):
+    _fields_ = [
+        ("mode", fc2Mode),
+        ("offsetX", ctypes.c_uint32),
+        ("offsetY", ctypes.c_uint32),
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("pixelFormat", fc2PixelFormat),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2Format7Info(ctypes.Structure):
+    _fields_ = [
+        ("mode", fc2Mode),
+        ("maxWidth", ctypes.c_uint32),
+        ("maxHeight", ctypes.c_uint32),
+        ("offsetHStepSize", ctypes.c_uint32),
+        ("offsetVStepSize", ctypes.c_uint32),
+        ("imageHStepSize", ctypes.c_uint32),
+        ("imageVStepSize", ctypes.c_uint32),
+        ("pixelFormatBitField", ctypes.c_uint32),
+        ("vendorPixelFormatBitField", ctypes.c_uint32),
+        ("packetSize", ctypes.c_uint32),
+        ("minPacketSize", ctypes.c_uint32),
+        ("maxPacketSize", ctypes.c_uint32),
+        ("percentage", ctypes.c_float),
+        ("reserved", ctypes.c_uint32 * 16),
+    ]
+
+
+class fc2Format7PacketInfo(ctypes.Structure):
+    _fields_ = [
+        ("recommendedBytesPerPacket", ctypes.c_uint32),
+        ("maxBytesPerPacket", ctypes.c_uint32),
+        ("unitBytesPerPacket", ctypes.c_uint32),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2Config(ctypes.Structure):
+    _fields_ = [
+        ("numBuffers", ctypes.c_uint32),
+        ("numImageNotifications", ctypes.c_uint32),
+        ("minNumImageNotifications", ctypes.c_uint32),
+        ("grabTimeout", ctypes.c_int),
+        ("grabMode", fc2GrabMode),
+        ("highPerformanceRetrieveBuffer", BOOL),
+        ("isochBusSpeed", fc2BusSpeed),
+        ("asyncBusSpeed", fc2BusSpeed),
+        ("bandwidthAllocation", fc2BandwidthAllocation),
+        ("registerTimeoutRetries", ctypes.c_uint32),
+        ("registerTimeout", ctypes.c_uint32),
+        ("reserved", ctypes.c_uint32 * 16),
     ]
 
 

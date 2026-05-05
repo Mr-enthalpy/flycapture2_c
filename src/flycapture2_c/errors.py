@@ -105,6 +105,18 @@ class TriggerModeError(FlyCapture2Error):
     pass
 
 
+class UnsupportedFormat7Error(FlyCapture2Error):
+    pass
+
+
+class Format7ValidationError(FlyCapture2Error):
+    pass
+
+
+class CameraConfigurationError(FlyCapture2Error):
+    pass
+
+
 class FlyCapture2Failure(FlyCapture2Error):
     pass
 
