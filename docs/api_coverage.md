@@ -24,11 +24,16 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 | Trigger | `fc2GetTriggerMode` | `fc2TriggerMode` | raw-bound | `Camera.get_trigger_mode` | covered | covered by opt-in trigger readonly test | covered by opt-in reversible trigger write test | Dedicated trigger API, no GUI. |
 | Trigger | `fc2SetTriggerMode` | `fc2TriggerMode` | raw-bound | `Camera.set_trigger_mode`, `Camera.enable_trigger`, `Camera.disable_trigger` | covered with fake API | not-applicable | covered by opt-in reversible trigger write test | Writes save and restore old trigger state in hardware test. |
 | Trigger | `fc2SetTriggerModeBroadcast` | `fc2TriggerMode` | raw-bound | explicit `broadcast=True` | covered with fake API | not-applicable | not-run-by-default | Bound because the C header exposes it and the signature is straightforward. |
+| Format7 | `fc2GetFormat7Info` | `fc2Format7Info` | raw-bound | `Camera.get_format7_info` | covered | opt-in readonly test added | not-applicable | Queries mode support and pixel format mask. |
+| Format7 | `fc2ValidateFormat7Settings` | `fc2Format7ImageSettings`, `fc2Format7PacketInfo` | raw-bound | `Camera.validate_format7` | covered | not-applicable | used by opt-in reversible Format7 write test | Validation does not apply settings. |
+| Format7 | `fc2GetFormat7Configuration` | `fc2Format7ImageSettings` | raw-bound | `Camera.get_format7_configuration` | covered | opt-in readonly test added when camera is already in Format7 | used by opt-in reversible Format7 write test | SDK call only succeeds when camera is in Format7. |
+| Format7 | `fc2SetFormat7ConfigurationPacket` | `fc2Format7ImageSettings` | raw-bound | `Camera.set_format7`, `Camera.set_roi`, `Camera.set_pixel_format` | covered | not-applicable | opt-in reversible write test added | High-level API uses validated packet size. |
+| Format7 | `fc2SetFormat7Configuration` | `fc2Format7ImageSettings` | raw-bound | raw-level method only | covered | not-applicable | not-run-by-default | Percent-speed variant is bound but not used by default high-level helpers. |
+| Configuration | `fc2GetConfiguration` | `fc2Config` | raw-bound | `Camera.get_configuration` | covered | opt-in readonly test added | used by opt-in reversible config write test | SDK-level config, distinct from smoke-test wall-clock timeout. |
+| Configuration | `fc2SetConfiguration` | `fc2Config` | raw-bound | `Camera.set_configuration`, `Camera.set_grab_timeout`, `Camera.set_grab_mode` | covered | not-applicable | opt-in reversible grab-timeout write test added | Saves and restores previous config in hardware test. |
 
 Deferred in this milestone:
 
-- Format7
-- ROI
 - GigE
 - strobe / GPIO
 - register access

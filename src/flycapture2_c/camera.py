@@ -4,17 +4,31 @@ from dataclasses import dataclass
 
 from .api import FlyCapture2CAPI, get_api
 from .bus import CameraDescriptor, guid_to_tuple
+from .config import BandwidthAllocation, CameraConfiguration, GrabMode
 from .ctypes_defs import fc2CameraInfo, fc2Context, fc2Image, fc2Property
 from .errors import (
     CameraStateError,
     FC2ErrorCode,
     FlyCapture2Error,
+    Format7ValidationError,
     PropertyModeError,
     PropertyNotWritableError,
     PropertyOutOfRangeError,
+    UnsupportedFormat7Error,
     UnsupportedPropertyError,
 )
+from .format7 import (
+    Format7Configuration,
+    Format7ImageSettings,
+    Format7Info,
+    Format7PacketInfo,
+    Format7Validation,
+    build_format7_image_settings,
+    choose_preferred_pixel_format,
+    normalize_format7_mode,
+)
 from .image import ImageFrame, image_to_frame
+from .pixel_format import PixelFormat, normalize_pixel_format
 from .properties import (
     CameraPropertyInfo,
     CameraPropertyValue,
@@ -217,6 +231,156 @@ class Camera:
         self._require_open()
         assert self._context is not None
         return self._api.get_video_mode_and_frame_rate(self._context)
+
+    def get_configuration(self) -> CameraConfiguration:
+        self._require_open()
+        assert self._context is not None
+        return CameraConfiguration.from_c(self._api.get_configuration(self._context))
+
+    def set_configuration(
+        self,
+        configuration: CameraConfiguration | None = None,
+        *,
+        num_buffers: int | None = None,
+        num_image_notifications: int | None = None,
+        grab_timeout: int | None = None,
+        grab_mode: GrabMode | str | int | None = None,
+        high_performance_retrieve_buffer: bool | None = None,
+        isoch_bus_speed: int | None = None,
+        async_bus_speed: int | None = None,
+        bandwidth_allocation: BandwidthAllocation | str | int | None = None,
+        register_timeout_retries: int | None = None,
+        register_timeout: int | None = None,
+    ) -> CameraConfiguration:
+        self._require_open()
+        assert self._context is not None
+        base = configuration or self.get_configuration()
+        updated = base.with_updates(
+            num_buffers=num_buffers,
+            num_image_notifications=num_image_notifications,
+            grab_timeout=grab_timeout,
+            grab_mode=grab_mode,
+            high_performance_retrieve_buffer=high_performance_retrieve_buffer,
+            isoch_bus_speed=isoch_bus_speed,
+            async_bus_speed=async_bus_speed,
+            bandwidth_allocation=bandwidth_allocation,
+            register_timeout_retries=register_timeout_retries,
+            register_timeout=register_timeout,
+        )
+        self._api.set_configuration(self._context, updated.to_c())
+        return self.get_configuration()
+
+    def set_grab_timeout(self, ms: int) -> CameraConfiguration:
+        """Set the SDK-level RetrieveBuffer grab timeout in milliseconds."""
+        return self.set_configuration(grab_timeout=int(ms))
+
+    def set_grab_mode(self, mode: GrabMode | str | int) -> CameraConfiguration:
+        return self.set_configuration(grab_mode=mode)
+
+    def get_format7_info(self, mode: int = 0) -> Format7Info:
+        self._require_open()
+        assert self._context is not None
+        info, supported = self._api.get_format7_info(self._context, normalize_format7_mode(mode))
+        return Format7Info.from_c(info, supported=supported)
+
+    def get_format7_configuration(self) -> Format7Configuration:
+        self._require_open()
+        assert self._context is not None
+        settings, packet_size, percentage = self._api.get_format7_configuration(self._context)
+        return Format7Configuration(
+            settings=Format7ImageSettings.from_c(settings),
+            packet_size=packet_size,
+            percentage=percentage,
+        )
+
+    def validate_format7(
+        self,
+        *,
+        mode: int = 0,
+        offset_x: int = 0,
+        offset_y: int = 0,
+        width: int | None = None,
+        height: int | None = None,
+        pixel_format: PixelFormat | str | int = "MONO8",
+    ) -> Format7Validation:
+        self._require_open()
+        assert self._context is not None
+        info = self.get_format7_info(mode=mode)
+        settings = build_format7_image_settings(
+            info,
+            offset_x=offset_x,
+            offset_y=offset_y,
+            width=width,
+            height=height,
+            pixel_format=pixel_format,
+        )
+        settings_are_valid, packet_info = self._api.validate_format7_settings(self._context, settings.to_c())
+        return Format7Validation(
+            settings_are_valid=settings_are_valid,
+            packet_info=Format7PacketInfo.from_c(packet_info),
+            settings=settings,
+        )
+
+    def set_format7(
+        self,
+        *,
+        mode: int = 0,
+        offset_x: int = 0,
+        offset_y: int = 0,
+        width: int | None = None,
+        height: int | None = None,
+        pixel_format: PixelFormat | str | int = "MONO8",
+        packet_size: int | None = None,
+    ) -> Format7Configuration:
+        validation = self.validate_format7(
+            mode=mode,
+            offset_x=offset_x,
+            offset_y=offset_y,
+            width=width,
+            height=height,
+            pixel_format=pixel_format,
+        )
+        if not validation.settings_are_valid:
+            raise Format7ValidationError(f"Format7 settings are not valid: {validation.settings!r}")
+        assert self._context is not None
+        selected_packet_size = (
+            validation.packet_info.recommended_bytes_per_packet if packet_size is None else int(packet_size)
+        )
+        self._api.set_format7_configuration_packet(self._context, validation.settings.to_c(), selected_packet_size)
+        return self.get_format7_configuration()
+
+    def set_roi(
+        self,
+        *,
+        offset_x: int = 0,
+        offset_y: int = 0,
+        width: int | None = None,
+        height: int | None = None,
+        mode: int = 0,
+    ) -> Format7Configuration:
+        info = self.get_format7_info(mode=mode)
+        pixel_format = self._choose_format7_pixel_format_for_mode(info)
+        return self.set_format7(
+            mode=mode,
+            offset_x=offset_x,
+            offset_y=offset_y,
+            width=width,
+            height=height,
+            pixel_format=pixel_format,
+        )
+
+    def set_pixel_format(self, pixel_format: PixelFormat | str | int, *, mode: int = 0) -> Format7Configuration:
+        info = self.get_format7_info(mode=mode)
+        normalized = normalize_pixel_format(pixel_format)
+        settings = self._format7_base_settings_for_mode(info, pixel_format=normalized)
+        return self.set_format7(
+            mode=mode,
+            offset_x=settings.offset_x,
+            offset_y=settings.offset_y,
+            width=settings.width,
+            height=settings.height,
+            pixel_format=settings.pixel_format,
+        )
 
     def get_trigger_mode_info(self) -> TriggerModeInfo:
         self._require_open()
@@ -427,6 +591,38 @@ class Camera:
         prop.absValue = float(value)
         self._api.set_property(self._context, prop)
         return CameraPropertyValue.from_c(self._api.get_property(self._context, int(property_type)))
+
+    def _format7_base_settings_for_mode(
+        self,
+        info: Format7Info,
+        *,
+        pixel_format: PixelFormat,
+    ) -> Format7ImageSettings:
+        if not info.supported:
+            raise UnsupportedFormat7Error(f"Format7 mode {info.mode} is not supported by this camera.")
+        try:
+            current = self.get_format7_configuration()
+            if current.settings.mode == info.mode:
+                return Format7ImageSettings(
+                    mode=info.mode,
+                    offset_x=current.settings.offset_x,
+                    offset_y=current.settings.offset_y,
+                    width=current.settings.width,
+                    height=current.settings.height,
+                    pixel_format=pixel_format,
+                )
+        except FlyCapture2Error:
+            pass
+        return build_format7_image_settings(info, pixel_format=pixel_format)
+
+    def _choose_format7_pixel_format_for_mode(self, info: Format7Info) -> PixelFormat:
+        try:
+            current = self.get_format7_configuration()
+            if current.settings.mode == info.mode:
+                return choose_preferred_pixel_format(info, current=current.settings.pixel_format)
+        except FlyCapture2Error:
+            pass
+        return choose_preferred_pixel_format(info)
 
     @staticmethod
     def _validate_property_write_request(

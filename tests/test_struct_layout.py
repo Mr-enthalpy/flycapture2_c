@@ -2,7 +2,16 @@ from __future__ import annotations
 
 import ctypes
 
-from flycapture2_c.ctypes_defs import fc2Image, fc2PGRGuid, fc2TriggerMode, fc2TriggerModeInfo
+from flycapture2_c.ctypes_defs import (
+    fc2Config,
+    fc2Format7ImageSettings,
+    fc2Format7Info,
+    fc2Format7PacketInfo,
+    fc2Image,
+    fc2PGRGuid,
+    fc2TriggerMode,
+    fc2TriggerModeInfo,
+)
 
 
 def test_fc2_pgr_guid_layout() -> None:
@@ -61,3 +70,76 @@ def test_fc2_trigger_mode_layout() -> None:
     assert ctypes.sizeof(fc2TriggerMode) == 52
     for field_name, offset in expected_offsets.items():
         assert getattr(fc2TriggerMode, field_name).offset == offset
+
+
+def test_fc2_format7_image_settings_layout() -> None:
+    expected_offsets = {
+        "mode": 0,
+        "offsetX": 4,
+        "offsetY": 8,
+        "width": 12,
+        "height": 16,
+        "pixelFormat": 20,
+        "reserved": 24,
+    }
+
+    assert ctypes.sizeof(fc2Format7ImageSettings) == 56
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2Format7ImageSettings, field_name).offset == offset
+
+
+def test_fc2_format7_info_layout() -> None:
+    expected_offsets = {
+        "mode": 0,
+        "maxWidth": 4,
+        "maxHeight": 8,
+        "offsetHStepSize": 12,
+        "offsetVStepSize": 16,
+        "imageHStepSize": 20,
+        "imageVStepSize": 24,
+        "pixelFormatBitField": 28,
+        "vendorPixelFormatBitField": 32,
+        "packetSize": 36,
+        "minPacketSize": 40,
+        "maxPacketSize": 44,
+        "percentage": 48,
+        "reserved": 52,
+    }
+
+    assert ctypes.sizeof(fc2Format7Info) == 116
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2Format7Info, field_name).offset == offset
+
+
+def test_fc2_format7_packet_info_layout() -> None:
+    expected_offsets = {
+        "recommendedBytesPerPacket": 0,
+        "maxBytesPerPacket": 4,
+        "unitBytesPerPacket": 8,
+        "reserved": 12,
+    }
+
+    assert ctypes.sizeof(fc2Format7PacketInfo) == 44
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2Format7PacketInfo, field_name).offset == offset
+
+
+def test_fc2_config_layout() -> None:
+    expected_offsets = {
+        "numBuffers": 0,
+        "numImageNotifications": 4,
+        "minNumImageNotifications": 8,
+        "grabTimeout": 12,
+        "grabMode": 16,
+        "highPerformanceRetrieveBuffer": 20,
+        "isochBusSpeed": 24,
+        "asyncBusSpeed": 28,
+        "bandwidthAllocation": 32,
+        "registerTimeoutRetries": 36,
+        "registerTimeout": 40,
+        "reserved": 44,
+    }
+
+    assert ctypes.sizeof(fc2Config) == 108
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2Config, field_name).offset == offset

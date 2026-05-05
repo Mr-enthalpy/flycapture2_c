@@ -60,6 +60,24 @@ Property write policy:
 Trigger mode is exposed through dedicated `TriggerModeInfo` and `TriggerMode` dataclasses, not through the generic property API.
 This is intentional because FlyCapture2 uses dedicated trigger structures and functions for trigger configuration.
 
+## Format7, ROI, and Pixel Format
+
+- `fc2GetFormat7Info()` -> `Camera.get_format7_info()`
+- `fc2ValidateFormat7Settings()` -> `Camera.validate_format7()`
+- `fc2GetFormat7Configuration()` -> `Camera.get_format7_configuration()`
+- `fc2SetFormat7ConfigurationPacket()` -> `Camera.set_format7()`, `Camera.set_roi()`, `Camera.set_pixel_format()`
+- `fc2SetFormat7Configuration()` -> raw `FlyCapture2CAPI.set_format7_configuration()`
+
+High-level ROI is camera-side Format7 configuration, not Python-side image cropping.
+`PixelFormat` distinguishes SDK-configurable formats from formats that `read_frame()` can currently decode.
+
+## SDK Capture Configuration
+
+- `fc2GetConfiguration()` -> `Camera.get_configuration()`
+- `fc2SetConfiguration()` -> `Camera.set_configuration()`, `Camera.set_grab_timeout()`, `Camera.set_grab_mode()`
+
+`Camera.set_grab_timeout(ms)` sets the SDK-level `RetrieveBuffer()` timeout. It is separate from `FLYCAPTURE2_CAPTURE_TIMEOUT_MS`, which remains a Python-side smoke-test guard.
+
 ## Error handling
 
 Every wrapped FlyCapture2 return code is checked and converted into a typed Python exception from `flycapture2_c.errors`.

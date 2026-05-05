@@ -71,3 +71,79 @@ with Camera.open(index=0) as cam:
     finally:
         cam.set_trigger_mode(old_trigger)
 ```
+
+## Configure Pixel Format and ROI
+
+This configures camera-side Format7 ROI. It is not a Python-side crop.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_pixel_format("MONO8")
+    cam.set_roi(offset_x=0, offset_y=0, width=1024, height=768)
+    cam.start()
+    frame = cam.read_frame()
+```
+
+`read_frame()` currently decodes copied NumPy arrays for `MONO8`, `MONO16`, `RAW8`, and `RAW16`. Other SDK pixel formats may be configurable, but frame retrieval will raise `UnsupportedPixelFormatError` until an explicit decode or raw-frame path is implemented.
+
+## Validate Format7 Before Writing
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    validation = cam.validate_format7(
+        mode=0,
+        offset_x=0,
+        offset_y=0,
+        width=1024,
+        height=768,
+        pixel_format="MONO8",
+    )
+    if not validation.settings_are_valid:
+        raise RuntimeError("Format7 settings were rejected by the camera.")
+```
+
+## Set SDK-Level Grab Timeout
+
+This sets FlyCapture2's SDK-level `RetrieveBuffer()` timeout. It is separate from the Python-side `FLYCAPTURE2_CAPTURE_TIMEOUT_MS` smoke-test wall-clock guard.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_grab_timeout(1000)
+```
+
+## Reversible Format7 Configuration Pattern
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old_format7 = cam.get_format7_configuration()
+    try:
+        cam.set_format7(
+            mode=old_format7.settings.mode,
+            offset_x=0,
+            offset_y=0,
+            width=1024,
+            height=768,
+            pixel_format="MONO8",
+        )
+        cam.start()
+        frame = cam.read_frame()
+    finally:
+        cam.stop()
+        cam.set_format7(
+            mode=old_format7.settings.mode,
+            offset_x=old_format7.settings.offset_x,
+            offset_y=old_format7.settings.offset_y,
+            width=old_format7.settings.width,
+            height=old_format7.settings.height,
+            pixel_format=old_format7.settings.pixel_format,
+            packet_size=old_format7.packet_size,
+        )
+```

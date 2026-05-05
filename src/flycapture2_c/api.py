@@ -5,10 +5,15 @@ from threading import Lock
 
 from .ctypes_defs import (
     fc2CameraInfo,
+    fc2Config,
     fc2Context,
     fc2Error,
+    fc2Format7ImageSettings,
+    fc2Format7Info,
+    fc2Format7PacketInfo,
     fc2FrameRate,
     fc2Image,
+    fc2Mode,
     fc2PGRGuid,
     fc2PixelFormat,
     fc2Property,
@@ -61,6 +66,45 @@ class FlyCapture2CAPI:
 
         dll.fc2SetProperty.argtypes = [fc2Context, ctypes.POINTER(fc2Property)]
         dll.fc2SetProperty.restype = fc2Error
+
+        dll.fc2GetConfiguration.argtypes = [fc2Context, ctypes.POINTER(fc2Config)]
+        dll.fc2GetConfiguration.restype = fc2Error
+
+        dll.fc2SetConfiguration.argtypes = [fc2Context, ctypes.POINTER(fc2Config)]
+        dll.fc2SetConfiguration.restype = fc2Error
+
+        dll.fc2GetFormat7Info.argtypes = [fc2Context, ctypes.POINTER(fc2Format7Info), ctypes.POINTER(ctypes.c_int)]
+        dll.fc2GetFormat7Info.restype = fc2Error
+
+        dll.fc2ValidateFormat7Settings.argtypes = [
+            fc2Context,
+            ctypes.POINTER(fc2Format7ImageSettings),
+            ctypes.POINTER(ctypes.c_int),
+            ctypes.POINTER(fc2Format7PacketInfo),
+        ]
+        dll.fc2ValidateFormat7Settings.restype = fc2Error
+
+        dll.fc2GetFormat7Configuration.argtypes = [
+            fc2Context,
+            ctypes.POINTER(fc2Format7ImageSettings),
+            ctypes.POINTER(ctypes.c_uint32),
+            ctypes.POINTER(ctypes.c_float),
+        ]
+        dll.fc2GetFormat7Configuration.restype = fc2Error
+
+        dll.fc2SetFormat7ConfigurationPacket.argtypes = [
+            fc2Context,
+            ctypes.POINTER(fc2Format7ImageSettings),
+            ctypes.c_uint32,
+        ]
+        dll.fc2SetFormat7ConfigurationPacket.restype = fc2Error
+
+        dll.fc2SetFormat7Configuration.argtypes = [
+            fc2Context,
+            ctypes.POINTER(fc2Format7ImageSettings),
+            ctypes.c_float,
+        ]
+        dll.fc2SetFormat7Configuration.restype = fc2Error
 
         dll.fc2GetTriggerModeInfo.argtypes = [fc2Context, ctypes.POINTER(fc2TriggerModeInfo)]
         dll.fc2GetTriggerModeInfo.restype = fc2Error
@@ -175,6 +219,79 @@ class FlyCapture2CAPI:
 
     def set_property(self, context: fc2Context, prop: fc2Property) -> None:
         self._check(self.dll.fc2SetProperty(context, ctypes.byref(prop)), "fc2SetProperty")
+
+    def get_configuration(self, context: fc2Context) -> fc2Config:
+        config = fc2Config()
+        self._check(self.dll.fc2GetConfiguration(context, ctypes.byref(config)), "fc2GetConfiguration")
+        return config
+
+    def set_configuration(self, context: fc2Context, config: fc2Config) -> None:
+        self._check(self.dll.fc2SetConfiguration(context, ctypes.byref(config)), "fc2SetConfiguration")
+
+    def get_format7_info(self, context: fc2Context, mode: int) -> tuple[fc2Format7Info, bool]:
+        info = fc2Format7Info()
+        info.mode = fc2Mode(mode)
+        supported = ctypes.c_int()
+        self._check(
+            self.dll.fc2GetFormat7Info(context, ctypes.byref(info), ctypes.byref(supported)),
+            "fc2GetFormat7Info",
+        )
+        return info, bool(supported.value)
+
+    def validate_format7_settings(
+        self,
+        context: fc2Context,
+        settings: fc2Format7ImageSettings,
+    ) -> tuple[bool, fc2Format7PacketInfo]:
+        settings_are_valid = ctypes.c_int()
+        packet_info = fc2Format7PacketInfo()
+        self._check(
+            self.dll.fc2ValidateFormat7Settings(
+                context,
+                ctypes.byref(settings),
+                ctypes.byref(settings_are_valid),
+                ctypes.byref(packet_info),
+            ),
+            "fc2ValidateFormat7Settings",
+        )
+        return bool(settings_are_valid.value), packet_info
+
+    def get_format7_configuration(self, context: fc2Context) -> tuple[fc2Format7ImageSettings, int, float]:
+        settings = fc2Format7ImageSettings()
+        packet_size = ctypes.c_uint32()
+        percentage = ctypes.c_float()
+        self._check(
+            self.dll.fc2GetFormat7Configuration(
+                context,
+                ctypes.byref(settings),
+                ctypes.byref(packet_size),
+                ctypes.byref(percentage),
+            ),
+            "fc2GetFormat7Configuration",
+        )
+        return settings, int(packet_size.value), float(percentage.value)
+
+    def set_format7_configuration_packet(
+        self,
+        context: fc2Context,
+        settings: fc2Format7ImageSettings,
+        packet_size: int,
+    ) -> None:
+        self._check(
+            self.dll.fc2SetFormat7ConfigurationPacket(context, ctypes.byref(settings), ctypes.c_uint32(packet_size)),
+            "fc2SetFormat7ConfigurationPacket",
+        )
+
+    def set_format7_configuration(
+        self,
+        context: fc2Context,
+        settings: fc2Format7ImageSettings,
+        percent_speed: float,
+    ) -> None:
+        self._check(
+            self.dll.fc2SetFormat7Configuration(context, ctypes.byref(settings), ctypes.c_float(percent_speed)),
+            "fc2SetFormat7Configuration",
+        )
 
     def get_trigger_mode_info(self, context: fc2Context) -> fc2TriggerModeInfo:
         trigger_mode_info = fc2TriggerModeInfo()
