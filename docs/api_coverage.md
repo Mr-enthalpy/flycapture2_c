@@ -1,6 +1,6 @@
 # API Coverage
 
-This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim. Stage 6A software trigger firing is complete for the current project scope; Stage 6B GigE-specific controls are next.
+This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim. Stage 6B GigE-specific controls are complete for the current project scope; broader raw SDK coverage is next.
 
 | Category | Function | Structs required | Raw binding status | High-level API status | No-hardware test status | Hardware readonly test status | Hardware write test status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -39,6 +39,22 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 | Trigger | `fc2SetTriggerModeBroadcast` | `fc2TriggerMode` | raw-bound | explicit `broadcast=True` | covered with fake API | not-applicable | not-run-by-default | Bound because the C header exposes it and the signature is straightforward. |
 | Trigger | `fc2FireSoftwareTrigger` | none | optional raw-bound | `Camera.fire_software_trigger` | covered | not-applicable | covered by opt-in software trigger fire-and-grab test | SDK-level primitive only. It does not configure trigger mode, start capture, retrieve a frame, sleep, poll, or schedule acquisition. |
 | Trigger | `fc2FireSoftwareTriggerBroadcast` | none | optional raw-bound | `Camera.fire_software_trigger(broadcast=True)` | covered | not-applicable | not-run-by-default | Optional symbol; calling broadcast on a DLL that lacks it raises `FlyCapture2NotSupportedError`. |
+| GigE | `fc2GetGigEConfig` | `fc2GigEConfig` | optional raw-bound | `Camera.get_gige_config` | covered | opt-in readonly test added | used by opt-in same-value write test | Camera-model-dependent. Raises `FlyCapture2NotSupportedError` if the DLL lacks the symbol. |
+| GigE | `fc2SetGigEConfig` | `fc2GigEConfig` | optional raw-bound | `Camera.set_gige_config` | covered | not-applicable | opt-in same-value write test added | Starts from current/dataclass state, writes explicitly, and reads back. Does not alter capture state. |
+| GigE | `fc2GetGigEProperty` | `fc2GigEProperty` | optional raw-bound | `Camera.get_gige_property` | covered | opt-in readonly test added | used by opt-in same-value write test | Covers heartbeat, heartbeat timeout, packet size, and packet delay property types from the C header. |
+| GigE | `fc2SetGigEProperty` | `fc2GigEProperty` | optional raw-bound | `Camera.set_gige_property` | covered | not-applicable | opt-in same-value write test added for conservative writable properties | Validates writability and range. Tests avoid changing packet size or packet delay values. |
+| GigE | `fc2DiscoverGigEPacketSize` | none | optional raw-bound | `Camera.discover_gige_packet_size` | covered | opt-in readonly helper test added | not-applicable | Discovery only; does not write packet size. |
+| GigE | `fc2QueryGigEImagingMode` | `fc2Mode` | optional raw-bound | `Camera.query_gige_imaging_mode` | covered | opt-in readonly helper test added | not-applicable | Readonly support query. |
+| GigE | `fc2GetGigEImagingMode` | `fc2Mode` | optional raw-bound | `Camera.get_gige_imaging_mode` | covered | opt-in readonly helper test added | not-applicable | Readonly mode readback. |
+| GigE | `fc2SetGigEImagingMode` | `fc2Mode` | optional raw-bound | `Camera.set_gige_imaging_mode` | covered | not-applicable | not-run-by-default | Exposed as explicit SDK primitive; active write testing is deferred because mode changes can affect image settings. |
+| GigE | `fc2GetGigEImageSettingsInfo` | `fc2GigEImageSettingsInfo` | optional raw-bound | `Camera.get_gige_image_settings_info` | covered | opt-in readonly test added | not-applicable | Camera-model-dependent image constraints and pixel format mask. |
+| GigE | `fc2GetGigEImageSettings` | `fc2GigEImageSettings` | optional raw-bound | `Camera.get_gige_image_settings` | covered | opt-in readonly test added | used by opt-in same-value write test | Camera-side GigE image settings, not Python-side crop. |
+| GigE | `fc2SetGigEImageSettings` | `fc2GigEImageSettings` | optional raw-bound | `Camera.set_gige_image_settings` | covered | not-applicable | opt-in same-value write test added | Same-value write smoke only by default; active ROI/pixel changes are caller-controlled. |
+| GigE | `fc2GetGigEImageBinningSettings` | none | optional raw-bound | `Camera.get_gige_image_binning_settings` | covered | opt-in readonly through write-test setup where available | used by opt-in same-value write test | Skips cleanly when unsupported. |
+| GigE | `fc2SetGigEImageBinningSettings` | none | optional raw-bound | `Camera.set_gige_image_binning_settings` | covered | not-applicable | opt-in same-value write test added | Active binning changes are not part of default hardware validation. |
+| GigE | `fc2GetNumStreamChannels` | none | optional raw-bound | `Camera.get_num_gige_stream_channels` | covered | opt-in readonly test added | not-applicable | Stream channel inspection only; no packet streaming service. |
+| GigE | `fc2GetGigEStreamChannelInfo` | `fc2GigEStreamChannel` | optional raw-bound | `Camera.get_gige_stream_channel_info` | covered | opt-in readonly test added | not-applicable | Readonly high-level API. |
+| GigE | `fc2SetGigEStreamChannelInfo` | `fc2GigEStreamChannel` | optional raw-bound | raw `FlyCapture2CAPI.set_gige_stream_channel_info` only | covered by spec | not-applicable | not-run-by-default | No high-level setter in this milestone; stream channel writes are risky and deferred. |
 | Format7 | `fc2GetFormat7Info` | `fc2Format7Info` | raw-bound | `Camera.get_format7_info` | covered | opt-in readonly test added | not-applicable | Queries mode support and pixel format mask. |
 | Format7 | `fc2ValidateFormat7Settings` | `fc2Format7ImageSettings`, `fc2Format7PacketInfo` | raw-bound | `Camera.validate_format7` | covered | not-applicable | used by opt-in reversible Format7 write test | Validation does not apply settings. |
 | Format7 | `fc2GetFormat7Configuration` | `fc2Format7ImageSettings` | raw-bound | `Camera.get_format7_configuration` | covered | opt-in readonly test added when camera is already in Format7 | used by opt-in reversible Format7 write test | SDK call only succeeds when camera is in Format7. |
@@ -49,6 +65,7 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 
 Deferred in this milestone:
 
-- GigE
+- bus-level GigE discovery and force-IP helpers
+- high-level stream-channel writes and risky network-changing operations
 - register access
 - callbacks / events

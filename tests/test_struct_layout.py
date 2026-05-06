@@ -17,6 +17,11 @@ from flycapture2_c.raw.structs import (
     fc2CameraStats,
     fc2EmbeddedImageInfo,
     fc2EmbeddedImageInfoProperty,
+    fc2GigEConfig,
+    fc2GigEImageSettings,
+    fc2GigEImageSettingsInfo,
+    fc2GigEProperty,
+    fc2GigEStreamChannel,
     fc2StrobeControl,
     fc2StrobeInfo,
 )
@@ -256,3 +261,93 @@ def test_fc2_strobe_control_layout() -> None:
     assert ctypes.sizeof(fc2StrobeControl) == 52
     for field_name, offset in expected_offsets.items():
         assert getattr(fc2StrobeControl, field_name).offset == offset
+
+
+def test_fc2_gige_property_layout_and_field_access() -> None:
+    expected_offsets = {
+        "propType": 0,
+        "isReadable": 4,
+        "isWritable": 8,
+        "min": 12,
+        "max": 16,
+        "value": 20,
+        "reserved": 24,
+    }
+
+    prop = fc2GigEProperty()
+    prop.propType = 2
+    prop.isReadable = 1
+    prop.value = 9000
+
+    assert ctypes.sizeof(fc2GigEProperty) == 56
+    assert prop.propType == 2
+    assert prop.value == 9000
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2GigEProperty, field_name).offset == offset
+
+
+def test_fc2_gige_stream_channel_layout_and_array_field() -> None:
+    expected_offsets = {
+        "networkInterfaceIndex": 0,
+        "hostPort": 4,
+        "doNotFragment": 8,
+        "packetSize": 12,
+        "interPacketDelay": 16,
+        "destinationIpAddress": 20,
+        "sourcePort": 24,
+        "reserved": 28,
+    }
+
+    channel = fc2GigEStreamChannel()
+    channel.destinationIpAddress.octets[:] = [239, 1, 2, 3]
+
+    assert ctypes.sizeof(fc2GigEStreamChannel) == 60
+    assert list(channel.destinationIpAddress.octets) == [239, 1, 2, 3]
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2GigEStreamChannel, field_name).offset == offset
+
+
+def test_fc2_gige_config_layout() -> None:
+    expected_offsets = {
+        "enablePacketResend": 0,
+        "registerTimeoutRetries": 4,
+        "registerTimeout": 8,
+        "reserved": 12,
+    }
+
+    assert ctypes.sizeof(fc2GigEConfig) == 44
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2GigEConfig, field_name).offset == offset
+
+
+def test_fc2_gige_image_settings_info_layout() -> None:
+    expected_offsets = {
+        "maxWidth": 0,
+        "maxHeight": 4,
+        "offsetHStepSize": 8,
+        "offsetVStepSize": 12,
+        "imageHStepSize": 16,
+        "imageVStepSize": 20,
+        "pixelFormatBitField": 24,
+        "vendorPixelFormatBitField": 28,
+        "reserved": 32,
+    }
+
+    assert ctypes.sizeof(fc2GigEImageSettingsInfo) == 96
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2GigEImageSettingsInfo, field_name).offset == offset
+
+
+def test_fc2_gige_image_settings_layout() -> None:
+    expected_offsets = {
+        "offsetX": 0,
+        "offsetY": 4,
+        "width": 8,
+        "height": 12,
+        "pixelFormat": 16,
+        "reserved": 20,
+    }
+
+    assert ctypes.sizeof(fc2GigEImageSettings) == 52
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2GigEImageSettings, field_name).offset == offset

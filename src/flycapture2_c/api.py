@@ -28,7 +28,18 @@ from .dll import load_library
 from .errors import FC2ErrorCode, raise_for_error
 from .errors import FlyCapture2NotSupportedError
 from .raw.specs import bind_function_specs
-from .raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2ImageMetadata, fc2StrobeControl, fc2StrobeInfo
+from .raw.structs import (
+    fc2CameraStats,
+    fc2EmbeddedImageInfo,
+    fc2GigEConfig,
+    fc2GigEImageSettings,
+    fc2GigEImageSettingsInfo,
+    fc2GigEProperty,
+    fc2GigEStreamChannel,
+    fc2ImageMetadata,
+    fc2StrobeControl,
+    fc2StrobeInfo,
+)
 
 
 class FlyCapture2CAPI:
@@ -246,6 +257,109 @@ class FlyCapture2CAPI:
         operation = "fc2FireSoftwareTriggerBroadcast" if broadcast else "fc2FireSoftwareTrigger"
         function = self._require_function(operation)
         self._check(function(context), operation)
+
+    def get_gige_property(self, context: fc2Context, property_type: int) -> fc2GigEProperty:
+        function = self._require_function("fc2GetGigEProperty")
+        prop = fc2GigEProperty()
+        prop.propType = int(property_type)
+        self._check(function(context, ctypes.byref(prop)), "fc2GetGigEProperty")
+        return prop
+
+    def set_gige_property(self, context: fc2Context, prop: fc2GigEProperty) -> None:
+        function = self._require_function("fc2SetGigEProperty")
+        self._check(function(context, ctypes.byref(prop)), "fc2SetGigEProperty")
+
+    def discover_gige_packet_size(self, context: fc2Context) -> int:
+        function = self._require_function("fc2DiscoverGigEPacketSize")
+        packet_size = ctypes.c_uint32()
+        self._check(function(context, ctypes.byref(packet_size)), "fc2DiscoverGigEPacketSize")
+        return int(packet_size.value)
+
+    def query_gige_imaging_mode(self, context: fc2Context, mode: int) -> bool:
+        function = self._require_function("fc2QueryGigEImagingMode")
+        supported = ctypes.c_int()
+        self._check(function(context, fc2Mode(mode), ctypes.byref(supported)), "fc2QueryGigEImagingMode")
+        return bool(supported.value)
+
+    def get_gige_imaging_mode(self, context: fc2Context) -> int:
+        function = self._require_function("fc2GetGigEImagingMode")
+        mode = fc2Mode()
+        self._check(function(context, ctypes.byref(mode)), "fc2GetGigEImagingMode")
+        return int(mode.value)
+
+    def set_gige_imaging_mode(self, context: fc2Context, mode: int) -> None:
+        function = self._require_function("fc2SetGigEImagingMode")
+        self._check(function(context, fc2Mode(mode)), "fc2SetGigEImagingMode")
+
+    def get_gige_image_settings_info(self, context: fc2Context) -> fc2GigEImageSettingsInfo:
+        function = self._require_function("fc2GetGigEImageSettingsInfo")
+        info = fc2GigEImageSettingsInfo()
+        self._check(function(context, ctypes.byref(info)), "fc2GetGigEImageSettingsInfo")
+        return info
+
+    def get_gige_image_settings(self, context: fc2Context) -> fc2GigEImageSettings:
+        function = self._require_function("fc2GetGigEImageSettings")
+        settings = fc2GigEImageSettings()
+        self._check(function(context, ctypes.byref(settings)), "fc2GetGigEImageSettings")
+        return settings
+
+    def set_gige_image_settings(self, context: fc2Context, settings: fc2GigEImageSettings) -> None:
+        function = self._require_function("fc2SetGigEImageSettings")
+        self._check(function(context, ctypes.byref(settings)), "fc2SetGigEImageSettings")
+
+    def get_gige_image_binning_settings(self, context: fc2Context) -> tuple[int, int]:
+        function = self._require_function("fc2GetGigEImageBinningSettings")
+        horizontal = ctypes.c_uint32()
+        vertical = ctypes.c_uint32()
+        self._check(
+            function(context, ctypes.byref(horizontal), ctypes.byref(vertical)),
+            "fc2GetGigEImageBinningSettings",
+        )
+        return int(horizontal.value), int(vertical.value)
+
+    def set_gige_image_binning_settings(self, context: fc2Context, horizontal: int, vertical: int) -> None:
+        function = self._require_function("fc2SetGigEImageBinningSettings")
+        self._check(
+            function(context, ctypes.c_uint32(horizontal), ctypes.c_uint32(vertical)),
+            "fc2SetGigEImageBinningSettings",
+        )
+
+    def get_num_gige_stream_channels(self, context: fc2Context) -> int:
+        function = self._require_function("fc2GetNumStreamChannels")
+        count = ctypes.c_uint32()
+        self._check(function(context, ctypes.byref(count)), "fc2GetNumStreamChannels")
+        return int(count.value)
+
+    def get_gige_stream_channel_info(self, context: fc2Context, channel: int) -> fc2GigEStreamChannel:
+        function = self._require_function("fc2GetGigEStreamChannelInfo")
+        stream_channel = fc2GigEStreamChannel()
+        self._check(
+            function(context, ctypes.c_uint32(channel), ctypes.byref(stream_channel)),
+            "fc2GetGigEStreamChannelInfo",
+        )
+        return stream_channel
+
+    def set_gige_stream_channel_info(
+        self,
+        context: fc2Context,
+        channel: int,
+        stream_channel: fc2GigEStreamChannel,
+    ) -> None:
+        function = self._require_function("fc2SetGigEStreamChannelInfo")
+        self._check(
+            function(context, ctypes.c_uint32(channel), ctypes.byref(stream_channel)),
+            "fc2SetGigEStreamChannelInfo",
+        )
+
+    def get_gige_config(self, context: fc2Context) -> fc2GigEConfig:
+        function = self._require_function("fc2GetGigEConfig")
+        config = fc2GigEConfig()
+        self._check(function(context, ctypes.byref(config)), "fc2GetGigEConfig")
+        return config
+
+    def set_gige_config(self, context: fc2Context, config: fc2GigEConfig) -> None:
+        function = self._require_function("fc2SetGigEConfig")
+        self._check(function(context, ctypes.byref(config)), "fc2SetGigEConfig")
 
     def get_strobe_info(self, context: fc2Context, source: int) -> fc2StrobeInfo:
         info = fc2StrobeInfo()

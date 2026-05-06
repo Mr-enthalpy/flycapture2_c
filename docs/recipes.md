@@ -2,8 +2,8 @@
 
 These examples use only the FlyCapture2 C API wrapper. They do not require any GUI path.
 
-Status note: Stage 6A software trigger firing is implemented. Strobe and GPIO
-availability are camera-model-dependent and wiring-dependent.
+Status note: Stage 6B GigE-specific controls are implemented. Strobe, GPIO, and
+GigE availability are camera-model-dependent and wiring-dependent.
 
 ## Configure External Hardware Trigger
 
@@ -374,3 +374,26 @@ with Camera.open(0) as cam:
         cam.stop()
         cam.set_embedded_image_info(old_metadata)
 ```
+
+## Inspect GigE Configuration
+
+GigE support is camera-model-dependent. These methods are SDK-level camera-local
+operations; they do not provide a network service or packet streaming transport.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    info = cam.get_camera_info()
+    print(info.interface_type)
+
+    config = cam.get_gige_config()
+    print(config)
+
+    settings = cam.get_gige_image_settings()
+    print(settings)
+```
+
+GigE writes are explicit. Avoid changing packet size, packet delay, IP address,
+subnet mask, gateway, or stream channel values unless you have a camera-specific
+recovery plan.

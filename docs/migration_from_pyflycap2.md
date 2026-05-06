@@ -2,7 +2,7 @@
 
 This project replaces GUI-dependent camera setup with direct FlyCapture2 C API calls through Python.
 
-Current status: Stage 6A software trigger firing is implemented. GPIO scope is
+Current status: Stage 6B GigE-specific controls are implemented. GPIO scope is
 limited to direct FlyCapture2 C API pin-direction helpers and embedded metadata
 readback; register-level GPIO control is not wrapped.
 
@@ -254,6 +254,32 @@ with Camera.open(0) as cam:
     print("output" if direction else "input")
 ```
 
+## Replace GUI-Based GigE Inspection
+
+Legacy GUI workflows often inspected GigE transport settings manually. Use the
+camera-local SDK calls directly:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    info = cam.get_camera_info()
+    print(info.interface_type)
+
+    config = cam.get_gige_config()
+    print(config)
+
+    settings = cam.get_gige_image_settings()
+    print(settings)
+```
+
+GigE support is camera-model-dependent. The wrapper exposes SDK-level
+configuration primitives only; it does not provide a network service, discovery
+daemon, sidecar process, frame transport, shared memory, ZMQ, IPC, or
+`optic_system` integration. Risky transport changes such as packet size, packet
+delay, IP address, subnet mask, gateway, or stream channel updates should remain
+explicit and camera-model-specific.
+
 ## Notes
 
 - `Camera.enable_trigger()` and `Camera.disable_trigger()` use FlyCapture2's dedicated trigger mode API, not GUI APIs.
@@ -263,4 +289,5 @@ with Camera.open(0) as cam:
 - `Camera.get_embedded_image_info()` and `Camera.read_frame_with_info().metadata` replace GUI-based embedded metadata inspection.
 - `Camera.get_strobe_info()`, `Camera.get_strobe()`, and `Camera.set_strobe()` replace GUI-based strobe source inspection and configuration.
 - Software trigger firing is implemented as an SDK-level camera operation, not an experiment scheduler.
-- GigE-specific controls are the next focused stage. Callbacks, register access, and broader GPIO control are still deferred.
+- GigE-specific controls are implemented as SDK-level camera operations, not a network service or transport layer.
+- Callbacks, register access, and broader GPIO control are still deferred.

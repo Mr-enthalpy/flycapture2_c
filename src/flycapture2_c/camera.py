@@ -27,6 +27,17 @@ from .format7 import (
     choose_preferred_pixel_format,
     normalize_format7_mode,
 )
+from .gige import (
+    GigEConfig,
+    GigEImageBinningSettings,
+    GigEImageSettings,
+    GigEImageSettingsInfo,
+    GigEProperty,
+    GigEPropertyType,
+    GigEStreamChannelInfo,
+    normalize_gige_property_type,
+    validate_gige_property_write,
+)
 from .image import ImageFrame, image_to_frame
 from .metadata import (
     CameraStats,
@@ -380,6 +391,137 @@ class Camera:
         desired = base.with_updates(on=on, polarity=polarity, delay=delay, duration=duration)
         self._api.set_strobe(self._context, desired.to_c(), broadcast=broadcast)
         return self.get_strobe(source_id)
+
+    def get_gige_config(self) -> GigEConfig:
+        self._require_open()
+        assert self._context is not None
+        return GigEConfig.from_c(self._api.get_gige_config(self._context))
+
+    def set_gige_config(
+        self,
+        config: GigEConfig | None = None,
+        *,
+        enable_packet_resend: bool | None = None,
+        register_timeout_retries: int | None = None,
+        register_timeout: int | None = None,
+    ) -> GigEConfig:
+        self._require_open()
+        assert self._context is not None
+        base = config or self.get_gige_config()
+        desired = base.with_updates(
+            enable_packet_resend=enable_packet_resend,
+            register_timeout_retries=register_timeout_retries,
+            register_timeout=register_timeout,
+        )
+        self._api.set_gige_config(self._context, desired.to_c())
+        return self.get_gige_config()
+
+    def get_gige_property(self, property_type: GigEPropertyType | str | int) -> GigEProperty:
+        self._require_open()
+        assert self._context is not None
+        normalized = normalize_gige_property_type(property_type)
+        return GigEProperty.from_c(self._api.get_gige_property(self._context, int(normalized)))
+
+    def set_gige_property(
+        self,
+        property_type: GigEPropertyType | str | int | GigEProperty,
+        *,
+        value: int | None = None,
+    ) -> GigEProperty:
+        self._require_open()
+        assert self._context is not None
+        if isinstance(property_type, GigEProperty):
+            base = property_type
+        else:
+            base = self.get_gige_property(property_type)
+        validate_gige_property_write(base, value=value if value is not None else base.value)
+        desired = base.with_updates(value=value)
+        self._api.set_gige_property(self._context, desired.to_c())
+        return self.get_gige_property(desired.property_type)
+
+    def discover_gige_packet_size(self) -> int:
+        self._require_open()
+        assert self._context is not None
+        return self._api.discover_gige_packet_size(self._context)
+
+    def query_gige_imaging_mode(self, mode: int) -> bool:
+        self._require_open()
+        assert self._context is not None
+        return self._api.query_gige_imaging_mode(self._context, int(mode))
+
+    def get_gige_imaging_mode(self) -> int:
+        self._require_open()
+        assert self._context is not None
+        return self._api.get_gige_imaging_mode(self._context)
+
+    def set_gige_imaging_mode(self, mode: int) -> int:
+        self._require_open()
+        assert self._context is not None
+        self._api.set_gige_imaging_mode(self._context, int(mode))
+        return self.get_gige_imaging_mode()
+
+    def get_gige_image_settings_info(self) -> GigEImageSettingsInfo:
+        self._require_open()
+        assert self._context is not None
+        return GigEImageSettingsInfo.from_c(self._api.get_gige_image_settings_info(self._context))
+
+    def get_gige_image_settings(self) -> GigEImageSettings:
+        self._require_open()
+        assert self._context is not None
+        return GigEImageSettings.from_c(self._api.get_gige_image_settings(self._context))
+
+    def set_gige_image_settings(
+        self,
+        settings: GigEImageSettings | None = None,
+        *,
+        offset_x: int | None = None,
+        offset_y: int | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        pixel_format: PixelFormat | str | int | None = None,
+    ) -> GigEImageSettings:
+        self._require_open()
+        assert self._context is not None
+        base = settings or self.get_gige_image_settings()
+        desired = base.with_updates(
+            offset_x=offset_x,
+            offset_y=offset_y,
+            width=width,
+            height=height,
+            pixel_format=pixel_format,
+        )
+        self._api.set_gige_image_settings(self._context, desired.to_c())
+        return self.get_gige_image_settings()
+
+    def get_gige_image_binning_settings(self) -> GigEImageBinningSettings:
+        self._require_open()
+        assert self._context is not None
+        horizontal, vertical = self._api.get_gige_image_binning_settings(self._context)
+        return GigEImageBinningSettings(horizontal=horizontal, vertical=vertical)
+
+    def set_gige_image_binning_settings(
+        self,
+        settings: GigEImageBinningSettings | None = None,
+        *,
+        horizontal: int | None = None,
+        vertical: int | None = None,
+    ) -> GigEImageBinningSettings:
+        self._require_open()
+        assert self._context is not None
+        base = settings or self.get_gige_image_binning_settings()
+        desired = base.with_updates(horizontal=horizontal, vertical=vertical)
+        self._api.set_gige_image_binning_settings(self._context, desired.horizontal, desired.vertical)
+        return self.get_gige_image_binning_settings()
+
+    def get_num_gige_stream_channels(self) -> int:
+        self._require_open()
+        assert self._context is not None
+        return self._api.get_num_gige_stream_channels(self._context)
+
+    def get_gige_stream_channel_info(self, channel: int = 0) -> GigEStreamChannelInfo:
+        self._require_open()
+        assert self._context is not None
+        return GigEStreamChannelInfo.from_c(self._api.get_gige_stream_channel_info(self._context, int(channel)))
 
     def get_configuration(self) -> CameraConfiguration:
         self._require_open()

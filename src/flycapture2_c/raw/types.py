@@ -24,6 +24,8 @@ from ..ctypes_defs import (
     fc2VideoMode,
 )
 
+fc2GigEPropertyType = fc2PropertyType
+
 __all__ = [
     "BOOL",
     "fc2BandwidthAllocation",
@@ -33,6 +35,7 @@ __all__ = [
     "fc2DriverType",
     "fc2Error",
     "fc2FrameRate",
+    "fc2GigEPropertyType",
     "fc2GrabMode",
     "fc2GrabTimeout",
     "fc2InterfaceType",

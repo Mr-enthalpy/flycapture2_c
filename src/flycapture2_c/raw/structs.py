@@ -26,6 +26,7 @@ from ..ctypes_defs import (
     fc2TriggerModeInfo,
     fc2Version,
 )
+from .types import fc2GigEPropertyType, fc2PixelFormat
 
 
 class fc2EmbeddedImageInfoProperty(ctypes.Structure):
@@ -97,6 +98,66 @@ class fc2StrobeControl(ctypes.Structure):
         ("reserved", ctypes.c_uint32 * 8),
     ]
 
+
+class fc2GigEProperty(ctypes.Structure):
+    _fields_ = [
+        ("propType", fc2GigEPropertyType),
+        ("isReadable", BOOL),
+        ("isWritable", BOOL),
+        ("min", ctypes.c_uint32),
+        ("max", ctypes.c_uint32),
+        ("value", ctypes.c_uint32),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2GigEStreamChannel(ctypes.Structure):
+    _fields_ = [
+        ("networkInterfaceIndex", ctypes.c_uint32),
+        ("hostPort", ctypes.c_uint32),
+        ("doNotFragment", BOOL),
+        ("packetSize", ctypes.c_uint32),
+        ("interPacketDelay", ctypes.c_uint32),
+        ("destinationIpAddress", fc2IPAddress),
+        ("sourcePort", ctypes.c_uint32),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2GigEConfig(ctypes.Structure):
+    _fields_ = [
+        ("enablePacketResend", BOOL),
+        ("registerTimeoutRetries", ctypes.c_uint32),
+        ("registerTimeout", ctypes.c_uint32),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2GigEImageSettingsInfo(ctypes.Structure):
+    _fields_ = [
+        ("maxWidth", ctypes.c_uint32),
+        ("maxHeight", ctypes.c_uint32),
+        ("offsetHStepSize", ctypes.c_uint32),
+        ("offsetVStepSize", ctypes.c_uint32),
+        ("imageHStepSize", ctypes.c_uint32),
+        ("imageVStepSize", ctypes.c_uint32),
+        ("pixelFormatBitField", ctypes.c_uint32),
+        ("vendorPixelFormatBitField", ctypes.c_uint32),
+        ("reserved", ctypes.c_uint32 * 16),
+    ]
+
+
+class fc2GigEImageSettings(ctypes.Structure):
+    _fields_ = [
+        ("offsetX", ctypes.c_uint32),
+        ("offsetY", ctypes.c_uint32),
+        ("width", ctypes.c_uint32),
+        ("height", ctypes.c_uint32),
+        ("pixelFormat", fc2PixelFormat),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
 __all__ = [
     "fc2CameraInfo",
     "fc2CameraStats",
@@ -107,6 +168,11 @@ __all__ = [
     "fc2Format7ImageSettings",
     "fc2Format7Info",
     "fc2Format7PacketInfo",
+    "fc2GigEConfig",
+    "fc2GigEImageSettings",
+    "fc2GigEImageSettingsInfo",
+    "fc2GigEProperty",
+    "fc2GigEStreamChannel",
     "fc2Image",
     "fc2ImageMetadata",
     "fc2IPAddress",

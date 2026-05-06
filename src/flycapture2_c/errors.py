@@ -133,6 +133,14 @@ class GPIOConfigurationError(FlyCapture2Error):
     pass
 
 
+class UnsupportedGigEError(FlyCapture2Error):
+    pass
+
+
+class GigEConfigurationError(FlyCapture2Error):
+    pass
+
+
 class FlyCapture2Failure(FlyCapture2Error):
     pass
 
