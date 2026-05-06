@@ -2,9 +2,8 @@
 
 Hardware access is always opt-in.
 
-Stage 5B strobe/GPIO hardware coverage is present. The next hardware-facing
-stage is Stage 6A software trigger firing. GigE-specific controls are deferred
-to Stage 6B.
+Stage 6A software trigger firing hardware coverage is present. The next
+hardware-facing stage is Stage 6B GigE-specific controls.
 
 Environment variables:
 
@@ -84,17 +83,26 @@ FLYCAPTURE2_HARDWARE_WRITE_TEST=1
 python -m pytest tests/hardware/test_hardware_strobe_gpio_write_reversible.py
 ```
 
-Planned Stage 6A software trigger firing tests should remain opt-in. Readonly
-coverage can query trigger/software-trigger capability with
-`FLYCAPTURE2_HARDWARE_TEST=1`; any test that changes trigger mode or fires a
-software trigger must remain explicitly gated and must not become an experiment
-workflow or external-device synchronization test.
+Software trigger firing hardware tests:
+
+```powershell
+FLYCAPTURE2_HARDWARE_TEST=1 python -m pytest tests/hardware/test_hardware_software_trigger.py::test_hardware_software_trigger_readonly
+
+FLYCAPTURE2_HARDWARE_TEST=1
+FLYCAPTURE2_HARDWARE_WRITE_TEST=1
+python -m pytest tests/hardware/test_hardware_software_trigger.py
+```
+
+The write-gated tests include an API smoke test and a fire-and-grab test. They
+change trigger mode, fire the SDK software trigger, restore prior state, and do
+not become an experiment workflow or external-device synchronization test.
 
 Notes:
 
 - default `pytest` skips all hardware tests
 - property write tests require both hardware opt-in flags
 - trigger write tests also require both hardware opt-in flags and restore the original trigger state
+- software trigger fire-and-grab tests require both hardware opt-in flags and restore the original trigger/config state
 - Format7 and SDK configuration write tests require both hardware opt-in flags and restore prior camera state
 - property write tests use strict generic property helpers and restore prior property state where possible
 - embedded metadata write tests restore the original embedded metadata state where possible

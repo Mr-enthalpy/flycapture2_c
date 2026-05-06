@@ -2,10 +2,9 @@
 
 This project replaces GUI-dependent camera setup with direct FlyCapture2 C API calls through Python.
 
-Current status: Stage 5B strobe/GPIO control is implemented. Stage 6A is
-software trigger firing. GPIO scope is limited to direct FlyCapture2 C API
-pin-direction helpers and embedded metadata readback; register-level GPIO
-control is not wrapped.
+Current status: Stage 6A software trigger firing is implemented. GPIO scope is
+limited to direct FlyCapture2 C API pin-direction helpers and embedded metadata
+readback; register-level GPIO control is not wrapped.
 
 ## Replace GUI-Based Trigger Configuration
 
@@ -48,6 +47,36 @@ with Camera.open(index=0) as cam:
     print(info.supported_modes)
     print(info.software_trigger_supported)
 ```
+
+## Replace GUI-Based Software Trigger Firing
+
+Legacy workflows sometimes configured software trigger mode in a GUI and then
+relied on GUI controls or C++ wrapper calls to fire. Use the SDK primitive
+directly:
+
+```python
+from flycapture2_c import Camera
+from flycapture2_c.trigger import SOFTWARE_TRIGGER_SOURCE
+
+with Camera.open(0) as cam:
+    info = cam.get_trigger_mode_info()
+    if not info.software_trigger_supported:
+        raise RuntimeError("This camera does not report software trigger support.")
+
+    old = cam.get_trigger_mode()
+    try:
+        cam.enable_trigger(source=SOFTWARE_TRIGGER_SOURCE, mode=0)
+        cam.start()
+        cam.fire_software_trigger()
+        frame = cam.read_frame_with_info()
+    finally:
+        cam.stop()
+        cam.set_trigger_mode(old)
+```
+
+`Camera.fire_software_trigger()` is only the SDK firing call. It does not start
+capture, retrieve frames, schedule repeated triggers, or synchronize external
+devices.
 
 ## Replace GUI-Based Pixel Format and ROI Configuration
 
@@ -233,5 +262,5 @@ with Camera.open(0) as cam:
 - `Camera.snapshot_properties()` replaces GUI-based camera property inspection.
 - `Camera.get_embedded_image_info()` and `Camera.read_frame_with_info().metadata` replace GUI-based embedded metadata inspection.
 - `Camera.get_strobe_info()`, `Camera.get_strobe()`, and `Camera.set_strobe()` replace GUI-based strobe source inspection and configuration.
-- Software trigger firing is the next focused stage. It should remain an SDK-level camera operation, not an experiment scheduler.
-- GigE-specific controls are deferred to Stage 6B. Callbacks, register access, and broader GPIO control are still deferred.
+- Software trigger firing is implemented as an SDK-level camera operation, not an experiment scheduler.
+- GigE-specific controls are the next focused stage. Callbacks, register access, and broader GPIO control are still deferred.

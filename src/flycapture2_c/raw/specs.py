@@ -155,6 +155,8 @@ _SPECS = [
         fc2Error,
         "trigger",
     ),
+    FunctionSpec("fc2FireSoftwareTrigger", [fc2Context], fc2Error, "trigger", required=False),
+    FunctionSpec("fc2FireSoftwareTriggerBroadcast", [fc2Context], fc2Error, "trigger", required=False),
     FunctionSpec("fc2GetStrobeInfo", [fc2Context, ctypes.POINTER(fc2StrobeInfo)], fc2Error, "strobe"),
     FunctionSpec("fc2GetStrobe", [fc2Context, ctypes.POINTER(fc2StrobeControl)], fc2Error, "strobe"),
     FunctionSpec("fc2SetStrobe", [fc2Context, ctypes.POINTER(fc2StrobeControl)], fc2Error, "strobe"),

@@ -73,6 +73,8 @@ def test_raw_specs_cover_current_binding_surface() -> None:
         "fc2GetTriggerMode",
         "fc2SetTriggerMode",
         "fc2SetTriggerModeBroadcast",
+        "fc2FireSoftwareTrigger",
+        "fc2FireSoftwareTriggerBroadcast",
         "fc2GetStrobeInfo",
         "fc2GetStrobe",
         "fc2SetStrobe",
@@ -104,6 +106,10 @@ def test_raw_specs_have_expected_representative_signatures() -> None:
     assert FUNCTION_SPECS["fc2SetProperty"].argtypes == [fc2Context, ctypes.POINTER(fc2Property)]
     assert FUNCTION_SPECS["fc2GetTriggerModeInfo"].argtypes == [fc2Context, ctypes.POINTER(fc2TriggerModeInfo)]
     assert FUNCTION_SPECS["fc2SetTriggerMode"].argtypes == [fc2Context, ctypes.POINTER(fc2TriggerMode)]
+    assert FUNCTION_SPECS["fc2FireSoftwareTrigger"].argtypes == [fc2Context]
+    assert FUNCTION_SPECS["fc2FireSoftwareTrigger"].required is False
+    assert FUNCTION_SPECS["fc2FireSoftwareTriggerBroadcast"].argtypes == [fc2Context]
+    assert FUNCTION_SPECS["fc2FireSoftwareTriggerBroadcast"].required is False
     assert FUNCTION_SPECS["fc2GetFormat7Info"].argtypes == [
         fc2Context,
         ctypes.POINTER(fc2Format7Info),
@@ -170,6 +176,8 @@ def test_bind_function_specs_assigns_argtypes_and_restype() -> None:
 def test_bind_function_specs_allows_missing_optional_functions() -> None:
     optional_names = {
         "ResetStats",
+        "fc2FireSoftwareTrigger",
+        "fc2FireSoftwareTriggerBroadcast",
         "fc2GetGPIOPinDirection",
         "fc2SetGPIOPinDirection",
         "fc2SetGPIOPinDirectionBroadcast",

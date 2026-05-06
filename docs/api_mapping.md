@@ -5,8 +5,7 @@ lifecycle, acquisition, trigger mode, Format7/ROI/pixel format, SDK capture
 configuration, and the generic property system. It does not claim full SDK
 coverage.
 
-Stage 5B strobe/GPIO control is implemented. Stage 6A is software trigger
-firing. GPIO scope is limited to direct C API pin-direction helpers plus
+Stage 6A software trigger firing is implemented. GPIO scope is limited to direct C API pin-direction helpers plus
 metadata-level GPIO pin-state observation; no register-level GPIO control is
 wrapped.
 
@@ -87,15 +86,15 @@ Property write policy:
 - `fc2GetTriggerMode()` -> `Camera.get_trigger_mode()`
 - `fc2SetTriggerMode()` -> `Camera.set_trigger_mode()`, `Camera.enable_trigger()`, `Camera.disable_trigger()`
 - `fc2SetTriggerModeBroadcast()` -> `Camera.set_trigger_mode(..., broadcast=True)`, `Camera.enable_trigger(..., broadcast=True)`, `Camera.disable_trigger(broadcast=True)`
+- `fc2FireSoftwareTrigger()` -> `Camera.fire_software_trigger()`
+- `fc2FireSoftwareTriggerBroadcast()` -> `Camera.fire_software_trigger(broadcast=True)`
 
 Trigger mode is exposed through dedicated `TriggerModeInfo` and `TriggerMode` dataclasses, not through the generic property API.
 This is intentional because FlyCapture2 uses dedicated trigger structures and functions for trigger configuration.
 
-Stage 6A will add the SDK-level software trigger firing call after the exact C
-header function is audited. That API should remain a camera-local primitive:
-configure software trigger mode, fire one software trigger, and retrieve a
-frame. Repeated trigger schedules and external-device coordination are outside
-this repository.
+Software trigger firing is a camera-local SDK primitive. It does not configure
+trigger mode, start capture, retrieve a frame, sleep, poll, schedule repeated
+triggers, or coordinate external devices.
 
 ## Format7, ROI, and Pixel Format
 
