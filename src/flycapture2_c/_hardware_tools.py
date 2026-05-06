@@ -380,15 +380,23 @@ def choose_safe_absolute_value(prop_info: CameraPropertyInfo, current_value: Cam
 
 
 def restore_property_value(camera: Camera, property_type: PropertyType, value: CameraPropertyValue) -> CameraPropertyValue:
+    prop_info = camera.get_property_info(property_type)
+    auto_manual_mode: bool | None
+    if value.auto_manual_mode:
+        auto_manual_mode = value.auto_manual_mode if prop_info.auto_supported else None
+    else:
+        auto_manual_mode = value.auto_manual_mode if prop_info.manual_supported else None
+    abs_control = value.abs_control if prop_info.abs_val_supported else None
+    use_abs_value = value.abs_control and prop_info.abs_val_supported
     return camera.set_property(
         property_type,
-        auto_manual_mode=value.auto_manual_mode,
-        on_off=value.on_off,
-        abs_control=value.abs_control,
-        one_push=value.one_push,
-        value_a=None if value.abs_control else value.value_a,
-        value_b=None if value.abs_control else value.value_b,
-        abs_value=value.abs_value if value.abs_control else None,
+        auto_manual_mode=auto_manual_mode,
+        on_off=value.on_off if prop_info.on_off_supported else None,
+        abs_control=abs_control,
+        one_push=value.one_push if prop_info.one_push_supported else None,
+        value_a=None if use_abs_value else value.value_a,
+        value_b=None if use_abs_value else value.value_b,
+        abs_value=value.abs_value if use_abs_value else None,
         policy=PropertyWritePolicy.RAW,
     )
 
