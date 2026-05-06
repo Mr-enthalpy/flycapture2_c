@@ -182,6 +182,7 @@ Current priorities:
 
 - classify the top-level public API and keep imports SDK-free
 - align version metadata, package discovery, and release notes
+- keep the release checklist, wheel audit, and no-hardware CI current
 - harden documentation around supported scope, validation workflows, and
   compatibility boundaries
 - verify optional SDK symbols fail with typed not-supported errors when absent

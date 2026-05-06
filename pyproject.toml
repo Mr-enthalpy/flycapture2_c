@@ -8,9 +8,44 @@ version = "0.6.0"
 description = "Scriptable, non-GUI Python wrapper around the FlyCapture2 C SDK."
 readme = "README.md"
 requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    { name = "Mr-enthalpy", email = "hannianchi@outlook.com" },
+]
+maintainers = [
+    { name = "Mr-enthalpy", email = "hannianchi@outlook.com" },
+]
 dependencies = [
     "numpy>=1.24",
 ]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
+
+[project.optional-dependencies]
+dev = [
+    "build>=1.2",
+    "pytest>=8",
+    "pyyaml>=6",
+]
+
+[project.urls]
+Homepage = "https://github.com/Mr-enthalpy/flycapture2_c"
+Repository = "https://github.com/Mr-enthalpy/flycapture2_c"
+Issues = "https://github.com/Mr-enthalpy/flycapture2_c/issues"
+Changelog = "https://github.com/Mr-enthalpy/flycapture2_c/blob/master/CHANGELOG.md"
+Documentation = "https://github.com/Mr-enthalpy/flycapture2_c/tree/master/docs"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

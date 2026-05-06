@@ -1,0 +1,29 @@
+name: No-Hardware CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  no-hardware:
+    runs-on: windows-latest
+    env:
+      FLYCAPTURE2_HARDWARE_TEST: "0"
+      FLYCAPTURE2_HARDWARE_WRITE_TEST: "0"
+      FLYCAPTURE2_SDK_DIR: "${{ github.workspace }}\\does_not_exist"
+      FLYCAPTURE2_DLL_DIR: "${{ github.workspace }}\\does_not_exist"
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.8"
+
+      - name: Install dev dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run release checks
+        run: python scripts/check_release.py
+
