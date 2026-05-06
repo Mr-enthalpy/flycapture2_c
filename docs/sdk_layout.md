@@ -37,3 +37,7 @@ Notes:
 - DLL loading happens only on first SDK call
 - the project does not copy SDK DLLs into `src/`
 - `third_party/` is treated as a local SDK lookup location only
+- `third_party/` must not be included in wheels, source distributions, or other
+  release artifacts for the Python wrapper
+- the MIT License applies to this Python wrapper, not to FlyCapture2 SDK files,
+  runtime DLLs, drivers, vendor headers, vendor libraries, or sample binaries

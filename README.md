@@ -61,6 +61,7 @@ Default no-hardware validation:
 ```powershell
 python -m pytest -q
 python -c "import flycapture2_c; print('ok')"
+python scripts/check_release.py
 ```
 
 Readonly hardware validation:
@@ -115,3 +116,17 @@ This repository currently carries the active FlyCapture2 wrapper, tests, docs,
 and hardware smoke tooling. A future distilled repository may be created from
 this work, but the current repository remains scoped to the FlyCapture2 C SDK
 wrapper and its own validation tools.
+
+## License and vendor SDK boundary
+
+This project is licensed under the MIT License.
+
+The license applies only to the Python wrapper code, tests, examples, and
+documentation in this repository. It does not grant any license to the
+FlyCapture2 SDK, FlyCapture2 runtime DLLs, vendor headers, vendor libraries,
+drivers, or sample binaries.
+
+Users must install the FlyCapture2 SDK separately and make the FlyCapture2 C
+runtime DLL discoverable through `FLYCAPTURE2_SDK_DIR`, `FLYCAPTURE2_DLL_DIR`,
+or the system DLL search path. Wheels and source distributions for this project
+must not bundle vendor SDK files.
