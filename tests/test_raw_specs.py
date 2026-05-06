@@ -256,6 +256,38 @@ def test_bind_function_specs_allows_missing_optional_functions() -> None:
     assert dll.fc2GetStats.argtypes == [fc2Context, ctypes.POINTER(fc2CameraStats)]
 
 
+def test_optional_function_specs_are_marked_not_required() -> None:
+    optional_names = {
+        name for name, spec in FUNCTION_SPECS.items() if not spec.required
+    }
+
+    assert optional_names == {
+        "ResetStats",
+        "fc2FireSoftwareTrigger",
+        "fc2FireSoftwareTriggerBroadcast",
+        "fc2GetGPIOPinDirection",
+        "fc2SetGPIOPinDirection",
+        "fc2SetGPIOPinDirectionBroadcast",
+        "fc2GetGigEProperty",
+        "fc2SetGigEProperty",
+        "fc2DiscoverGigEPacketSize",
+        "fc2QueryGigEImagingMode",
+        "fc2GetGigEImagingMode",
+        "fc2SetGigEImagingMode",
+        "fc2GetGigEImageSettingsInfo",
+        "fc2GetGigEImageSettings",
+        "fc2SetGigEImageSettings",
+        "fc2GetGigEImageBinningSettings",
+        "fc2SetGigEImageBinningSettings",
+        "fc2GetNumStreamChannels",
+        "fc2GetGigEStreamChannelInfo",
+        "fc2SetGigEStreamChannelInfo",
+        "fc2GetGigEConfig",
+        "fc2SetGigEConfig",
+        "fc2SetStrobeBroadcast",
+    }
+
+
 def test_flycapture2capi_bind_uses_raw_specs_registry() -> None:
     dll = _FakeDLL()
 
@@ -322,6 +354,75 @@ def test_flycapture2capi_missing_optional_gpio_broadcast_setter_raises_not_suppo
 
     with pytest.raises(FlyCapture2NotSupportedError, match="fc2SetGPIOPinDirectionBroadcast"):
         api.set_gpio_pin_direction(fc2Context(), 0, 1, broadcast=True)
+
+
+@pytest.mark.parametrize(
+    ("symbol_name", "call"),
+    [
+        ("ResetStats", lambda api: api.reset_camera_stats()),
+        ("fc2FireSoftwareTrigger", lambda api: api.fire_software_trigger(fc2Context())),
+        (
+            "fc2FireSoftwareTriggerBroadcast",
+            lambda api: api.fire_software_trigger(fc2Context(), broadcast=True),
+        ),
+        ("fc2GetGPIOPinDirection", lambda api: api.get_gpio_pin_direction(fc2Context(), 0)),
+        ("fc2SetGPIOPinDirection", lambda api: api.set_gpio_pin_direction(fc2Context(), 0, 1)),
+        (
+            "fc2SetGPIOPinDirectionBroadcast",
+            lambda api: api.set_gpio_pin_direction(fc2Context(), 0, 1, broadcast=True),
+        ),
+        ("fc2GetGigEProperty", lambda api: api.get_gige_property(fc2Context(), 0)),
+        ("fc2SetGigEProperty", lambda api: api.set_gige_property(fc2Context(), fc2GigEProperty())),
+        ("fc2DiscoverGigEPacketSize", lambda api: api.discover_gige_packet_size(fc2Context())),
+        ("fc2QueryGigEImagingMode", lambda api: api.query_gige_imaging_mode(fc2Context(), 0)),
+        ("fc2GetGigEImagingMode", lambda api: api.get_gige_imaging_mode(fc2Context())),
+        ("fc2SetGigEImagingMode", lambda api: api.set_gige_imaging_mode(fc2Context(), 0)),
+        (
+            "fc2GetGigEImageSettingsInfo",
+            lambda api: api.get_gige_image_settings_info(fc2Context()),
+        ),
+        ("fc2GetGigEImageSettings", lambda api: api.get_gige_image_settings(fc2Context())),
+        (
+            "fc2SetGigEImageSettings",
+            lambda api: api.set_gige_image_settings(fc2Context(), fc2GigEImageSettings()),
+        ),
+        (
+            "fc2GetGigEImageBinningSettings",
+            lambda api: api.get_gige_image_binning_settings(fc2Context()),
+        ),
+        (
+            "fc2SetGigEImageBinningSettings",
+            lambda api: api.set_gige_image_binning_settings(fc2Context(), 1, 1),
+        ),
+        ("fc2GetNumStreamChannels", lambda api: api.get_num_gige_stream_channels(fc2Context())),
+        (
+            "fc2GetGigEStreamChannelInfo",
+            lambda api: api.get_gige_stream_channel_info(fc2Context(), 0),
+        ),
+        (
+            "fc2SetGigEStreamChannelInfo",
+            lambda api: api.set_gige_stream_channel_info(fc2Context(), 0, fc2GigEStreamChannel()),
+        ),
+        ("fc2GetGigEConfig", lambda api: api.get_gige_config(fc2Context())),
+        ("fc2SetGigEConfig", lambda api: api.set_gige_config(fc2Context(), fc2GigEConfig())),
+        (
+            "fc2SetStrobeBroadcast",
+            lambda api: api.set_strobe(fc2Context(), fc2StrobeControl(), broadcast=True),
+        ),
+    ],
+)
+def test_flycapture2capi_missing_optional_symbols_raise_not_supported(symbol_name: str, call) -> None:
+    class MissingOptionalDLL:
+        def __getattr__(self, name: str):
+            if name == symbol_name:
+                raise AttributeError(name)
+            return _FakeFunction()
+
+    api = FlyCapture2CAPI()
+    api._dll = MissingOptionalDLL()  # type: ignore[assignment]
+
+    with pytest.raises(FlyCapture2NotSupportedError, match=symbol_name):
+        call(api)
 
 
 def test_import_raw_package_is_sdk_free() -> None:

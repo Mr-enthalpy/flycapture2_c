@@ -30,11 +30,13 @@ The raw layer may grow toward near-complete SDK coverage. The high-level layer s
 
 ## Current phase
 
-The active project phase is Stage 6.5: stabilization and hardware validation
-normalization.
+The active project phase is Stage 6.6: release readiness and API hardening.
 
 Do not add new SDK feature surface unless explicitly requested. Prefer:
 
+- auditing public API boundaries
+- improving package metadata and version consistency
+- updating changelog and release documentation
 - fixing hardware-test failures
 - improving capability reports
 - updating documentation
@@ -642,14 +644,8 @@ Do not use broad automatic translation unless the generated output is reviewed a
 
 The wrapper is not responsible for GUI threading, shared memory, ZMQ, or experiment scheduling.
 
-Continuous acquisition may be exposed as:
-
-```python
-for frame in cam.frames(count=100):
-    ...
-```
-
-or through repeated `read_frame()` calls.
+Continuous acquisition should remain explicit repeated `read_frame()` calls
+unless a future milestone deliberately scopes a camera-local helper.
 
 Do not implement a background acquisition daemon unless explicitly requested.
 

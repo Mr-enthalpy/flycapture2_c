@@ -81,7 +81,7 @@ __all__ = [
     "open_mock_camera",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.6.0"
 
 
 def __getattr__(name: str):

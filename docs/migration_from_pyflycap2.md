@@ -1,10 +1,13 @@
 # Migration From pyflycap2 / PyCapture2
 
-This project replaces GUI-dependent camera setup with direct FlyCapture2 C API calls through Python.
+This project replaces GUI-dependent camera setup with direct FlyCapture2 C SDK calls through Python.
 
-Current status: Stage 6B GigE-specific controls are implemented. GPIO scope is
-limited to direct FlyCapture2 C API pin-direction helpers and embedded metadata
-readback; register-level GPIO control is not wrapped.
+Current status: Stage 6.6 release readiness and API hardening. The implemented
+wrapper surface covers the major camera-local controls needed to replace GUI
+configuration, but it does not claim full SDK coverage or broad camera-model
+compatibility. GPIO scope is limited to direct FlyCapture2 C API pin-direction
+helpers and embedded metadata readback; register-level GPIO control is not
+wrapped.
 
 ## Replace GUI-Based Trigger Configuration
 
@@ -290,4 +293,9 @@ explicit and camera-model-specific.
 - `Camera.get_strobe_info()`, `Camera.get_strobe()`, and `Camera.set_strobe()` replace GUI-based strobe source inspection and configuration.
 - Software trigger firing is implemented as an SDK-level camera operation, not an experiment scheduler.
 - GigE-specific controls are implemented as SDK-level camera operations, not a network service or transport layer.
+- The wrapper does not provide GUI, preview UI, sidecar, shared memory, ZMQ/IPC,
+  `optic_system`, LCD/projector sync, acquisition workflow orchestration,
+  calibration, or reconstruction workflows.
+- Current hardware validation evidence is limited to the available camera;
+  broader camera-model and multi-camera validation is deferred.
 - Callbacks, register access, and broader GPIO control are still deferred.

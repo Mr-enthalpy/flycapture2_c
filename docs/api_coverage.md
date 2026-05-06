@@ -1,8 +1,8 @@
 # API Coverage
 
 This table tracks the FlyCapture2 C API surface wrapped by this project. The
-current wrapped SDK surface is broad but not complete. Stage 6.5 is focused on
-validation and stabilization of the existing wrapper, not new SDK feature
+current wrapped SDK surface is broad but not complete. Stage 6.6 is focused on
+release readiness and API hardening of the existing wrapper, not new SDK feature
 surface.
 
 Deferred areas include register access, callbacks/events, and broader raw SDK
@@ -13,6 +13,7 @@ broad hardware compatibility.
 | Category | Function | Structs required | Raw binding status | High-level API status | No-hardware test status | Hardware readonly test status | Hardware write test status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Raw infrastructure | current wrapped function signatures | `FunctionSpec` registry | `raw/specs.py` introduced | used by existing `FlyCapture2CAPI` binding path | covered | not-applicable | not-applicable | Stage 4.5 bridge; checked calls still live in top-level `api.py` for compatibility. |
+| Public API | top-level package exports | dataclasses, enums, errors, and lazy imports | not-applicable | classified in `docs/public_api.md` | covered by SDK-free import test | not-applicable | not-applicable | Stage 6.6 release hardening; no public method renames or SDK feature expansion. |
 | Validation tooling | current wrapped capability surface | existing high-level wrappers | not-applicable | scripts only | covered by no-hardware script tests | `scripts/hardware_capability_report.py` and `scripts/run_hardware_validation.py` | write groups require `--include-write` and `FLYCAPTURE2_HARDWARE_WRITE_TEST=1` | No new SDK function surface; diagnostic and pytest orchestration only. |
 | Context | `fc2CreateContext` | `fc2Context` | raw-bound | internal lifecycle | covered | covered through opt-in enumerate/open tests | not-applicable | Lazy loaded. |
 | Context | `fc2DestroyContext` | `fc2Context` | raw-bound | internal lifecycle | covered | covered through opt-in enumerate/open tests | not-applicable | Cleanup path. |

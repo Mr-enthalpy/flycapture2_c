@@ -1,9 +1,11 @@
 # Recipes
 
-These examples use only the FlyCapture2 C API wrapper. They do not require any GUI path.
+These examples use only the FlyCapture2 C SDK wrapper. They do not require any GUI path.
 
-Status note: Stage 6B GigE-specific controls are implemented. Strobe, GPIO, and
-GigE availability are camera-model-dependent and wiring-dependent.
+Status note: Stage 6.6 is release readiness and API hardening. Strobe, GPIO,
+and GigE availability are camera-model-dependent and wiring-dependent. Current
+hardware validation evidence is limited to the available camera; broader
+camera-model validation is deferred.
 
 ## Configure External Hardware Trigger
 
@@ -101,7 +103,7 @@ with Camera.open(index=0) as cam:
     old_trigger = cam.get_trigger_mode()
     try:
         cam.enable_trigger(source=0, mode=0)
-        # Run the acquisition that expects trigger mode here.
+        # Read frames here using the camera-local API your script needs.
     finally:
         cam.set_trigger_mode(old_trigger)
 ```

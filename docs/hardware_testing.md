@@ -3,10 +3,10 @@
 Hardware access is always opt-in, but readonly hardware validation should be
 routine operational practice when the available camera is connected.
 
-Stage 6.5 is active stabilization and hardware validation normalization. The
-goal is repeatable regression testing against the currently available camera,
-not SDK feature expansion and not broad multi-model qualification. Multi-camera
-and multi-model validation is deferred until additional camera hardware is
+Stage 6.6 is release readiness and API hardening. Hardware validation remains a
+repeatable regression check against the currently available camera, not SDK
+feature expansion and not broad multi-model qualification. Multi-camera and
+multi-model validation is deferred until additional camera hardware is
 available.
 
 The scripts in this document are developer validation tools only. They do not
@@ -22,12 +22,16 @@ Environment variables:
 - `FLYCAPTURE2_FRAME_COUNT=30`
 - `FLYCAPTURE2_CAPTURE_TIMEOUT_MS=...`
 
-Standard local validation sequence:
+Default no-hardware validation:
 
 ```powershell
 python -m pytest -q
 python -c "import flycapture2_c; print('ok')"
+```
 
+Readonly hardware validation:
+
+```powershell
 $env:FLYCAPTURE2_HARDWARE_TEST="1"
 $env:FLYCAPTURE2_CAMERA_INDEX="0"
 python scripts/hardware_capability_report.py --output outputs/capability_camera0.json
