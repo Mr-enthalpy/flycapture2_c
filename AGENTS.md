@@ -28,6 +28,27 @@ Use a two-layer architecture:
 
 The raw layer may grow toward near-complete SDK coverage. The high-level layer should remain curated and task-oriented.
 
+## Current phase
+
+The active project phase is Stage 6.5: stabilization and hardware validation
+normalization.
+
+Do not add new SDK feature surface unless explicitly requested. Prefer:
+
+- fixing hardware-test failures
+- improving capability reports
+- updating documentation
+- strengthening no-hardware regression tests
+- improving skip/error semantics for unsupported camera features
+
+Current hardware validation is limited to the available camera. Do not require
+or assume additional camera models. Multi-camera and multi-model validation is
+future work.
+
+Keep the experiment orchestration boundary strong. Do not add GUI, sidecar,
+shared memory, ZMQ/IPC, `optic_system`, LCD/projector synchronization,
+experiment scheduling, or acquisition workflow APIs.
+
 ## Primary scope
 
 The repository is responsible for:

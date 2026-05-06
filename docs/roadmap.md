@@ -1,20 +1,26 @@
 # Roadmap
 
-This roadmap describes the current implementation state and the next expansion
-order. It is not a claim of full FlyCapture2 SDK coverage.
+This roadmap describes the current implementation state. It is not a claim of
+full FlyCapture2 SDK coverage or broad camera-model compatibility.
+
+The active phase is Stage 6.5: active stabilization and hardware validation
+normalization. SDK feature expansion and broader multi-camera compatibility
+expansion are paused. Current hardware validation is limited to the physical
+camera that is available locally.
 
 ## Stage 0: Documentation and API Coverage
 
-Status: partially complete.
+Status: complete for the current project scope.
 
 - `docs/api_coverage.md` tracks currently wrapped functions.
 - `docs/api_mapping.md`, `docs/recipes.md`, `docs/hardware_testing.md`, and
   migration notes exist and are maintained.
-- Coverage still needs to become more systematic as raw SDK coverage grows.
+- Documentation now distinguishes implemented wrapper surface, active
+  stabilization work, and deferred SDK expansion.
 
 ## Stage 1: Raw Binding Infrastructure
 
-Status: incomplete and now prioritized.
+Status: complete for the current project scope.
 
 The repository historically grew through top-level `ctypes_defs.py` and
 `api.py`. The intended direction is a dedicated raw package:
@@ -25,9 +31,9 @@ The repository historically grew through top-level `ctypes_defs.py` and
 - `raw/library.py`: DLL loading and signature binding
 - `raw/api.py`: checked low-level calls
 
-Stage 4.5 started this work by adding the package skeleton and moving current
-function signatures into `raw/specs.py`. Future SDK expansion should continue
-using this registry instead of extending monolithic binding blocks.
+Stage 4.5 added the package skeleton and moved current function signatures into
+`raw/specs.py`. Broader raw SDK coverage remains future work. New SDK areas are
+not active during Stage 6.5.
 
 ## Stage 2: Lifecycle and Acquisition
 
@@ -140,29 +146,41 @@ Implemented:
 
 ## Stage 6.5: Systematic Testing and Hardware Qualification
 
-Status: complete for the current project stage.
+Status: active.
 
-Scope:
+Stage 6.5 is active stabilization and hardware validation normalization.
 
-- add a readonly JSON capability report for current wrapper areas
-- add a deterministic hardware pytest runner
-- keep hardware tests opt-in and write tests separately gated
-- normalize documentation for readonly, reversible write, and same-value smoke testing
+Current priorities:
+
+- run routine hardware validation when the available camera is connected
+- generate and inspect capability reports for the available camera
+- keep no-hardware regression tests passing without SDK or camera hardware
+- keep readonly hardware validation repeatable through `scripts/run_hardware_validation.py`
+- keep write-gated validation explicit and deliberate
+- improve documentation, skip behavior, and error reporting for unsupported camera features
 - avoid new SDK feature surface while stabilizing the existing wrapper
 
 Boundaries:
 
 - no register access, callbacks, events, or broader raw SDK expansion in this milestone
 - no GUI, sidecar, IPC, shared memory, ZMQ, `optic_system`, experiment scheduling, LCD/projector sync, calibration, reconstruction, or acquisition workflow API
+- no task-level acquisition helpers or workflow runners
+
+Hardware scope:
+
+- current validation evidence is for the available camera only
+- multi-camera and multi-model validation is deferred until additional hardware is available
+- do not write roadmap language that implies imminent validation across a camera fleet
 
 ## Stage 7+: Future Expansion
 
-Prioritized future areas:
+Future areas, not active milestones:
 
 - camera-local SDK primitives and broader raw FlyCapture2 C SDK coverage
 - register access as an advanced API
 - callbacks and events
 - release stabilization and migration documentation
+- multi-camera and multi-model compatibility validation when hardware becomes available
 
 Deferred areas remain outside this project:
 

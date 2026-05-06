@@ -1,6 +1,14 @@
 # API Coverage
 
-This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim. Stage 6B GigE-specific controls are complete for the current project scope. Stage 6.5 pauses SDK feature expansion and adds systematic testing and hardware qualification for the existing surface.
+This table tracks the FlyCapture2 C API surface wrapped by this project. The
+current wrapped SDK surface is broad but not complete. Stage 6.5 is focused on
+validation and stabilization of the existing wrapper, not new SDK feature
+surface.
+
+Deferred areas include register access, callbacks/events, and broader raw SDK
+coverage. Multi-camera compatibility evidence is limited to the currently
+available hardware. Do not read this table as a claim of full SDK coverage or
+broad hardware compatibility.
 
 | Category | Function | Structs required | Raw binding status | High-level API status | No-hardware test status | Hardware readonly test status | Hardware write test status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
