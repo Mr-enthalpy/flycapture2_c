@@ -2,12 +2,13 @@
 
 This project wraps the FlyCapture2 C API incrementally. It currently covers
 lifecycle, acquisition, trigger mode, Format7/ROI/pixel format, SDK capture
-configuration, and the generic property system. It does not claim full SDK
-coverage.
+configuration, the generic property system, embedded metadata, strobe/GPIO,
+software trigger firing, and GigE-specific camera controls. It does not claim
+full SDK coverage.
 
-Stage 6A software trigger firing is implemented. GPIO scope is limited to direct C API pin-direction helpers plus
-metadata-level GPIO pin-state observation; no register-level GPIO control is
-wrapped.
+Stage 6B GigE-specific controls are implemented. GPIO scope is limited to
+direct C API pin-direction helpers plus metadata-level GPIO pin-state
+observation; no register-level GPIO control is wrapped.
 
 ## Raw binding infrastructure
 
@@ -150,6 +151,35 @@ exposes pin direction helpers, and the embedded metadata API can observe
 `gpio_pin_state` when the camera supports that field. This project does not
 infer GPIO output behavior from registers or unrelated SDK concepts.
 
+## GigE-Specific Controls
+
+- `fc2GetGigEConfig()` -> `Camera.get_gige_config()`
+- `fc2SetGigEConfig()` -> `Camera.set_gige_config(...)`
+- `fc2GetGigEProperty()` -> `Camera.get_gige_property(...)`
+- `fc2SetGigEProperty()` -> `Camera.set_gige_property(...)`
+- `fc2DiscoverGigEPacketSize()` -> `Camera.discover_gige_packet_size()`
+- `fc2QueryGigEImagingMode()` -> `Camera.query_gige_imaging_mode(...)`
+- `fc2GetGigEImagingMode()` -> `Camera.get_gige_imaging_mode()`
+- `fc2SetGigEImagingMode()` -> `Camera.set_gige_imaging_mode(...)`
+- `fc2GetGigEImageSettingsInfo()` -> `Camera.get_gige_image_settings_info()`
+- `fc2GetGigEImageSettings()` -> `Camera.get_gige_image_settings()`
+- `fc2SetGigEImageSettings()` -> `Camera.set_gige_image_settings(...)`
+- `fc2GetGigEImageBinningSettings()` -> `Camera.get_gige_image_binning_settings()`
+- `fc2SetGigEImageBinningSettings()` -> `Camera.set_gige_image_binning_settings(...)`
+- `fc2GetNumStreamChannels()` -> `Camera.get_num_gige_stream_channels()`
+- `fc2GetGigEStreamChannelInfo()` -> `Camera.get_gige_stream_channel_info(...)`
+
+GigE support is camera-model-dependent and SDK/DLL-symbol-dependent. These APIs
+remain camera-local SDK primitives. They do not implement a network service,
+packet streaming service, discovery daemon, sidecar process, shared memory, ZMQ,
+IPC, or `optic_system` integration.
+
+The raw layer also binds `fc2SetGigEStreamChannelInfo()` as an optional SDK
+function, but no high-level stream-channel setter is exposed in this milestone
+because stream channel writes can disconnect or disrupt transport. Hardware
+write tests use same-value smoke checks and avoid active packet size, packet
+delay, IP address, subnet mask, gateway, and stream channel changes.
+
 ## Error handling
 
 Every wrapped FlyCapture2 return code is checked and converted into a typed Python exception from `flycapture2_c.errors`.
@@ -157,6 +187,7 @@ Every wrapped FlyCapture2 return code is checked and converted into a typed Pyth
 ## Intentionally not wrapped in this project
 
 - GUI APIs
+- network service, packet streaming service, or discovery daemon
 - sidecar / IPC / shared memory / ZMQ
 - `optic_system` backend code
 - experiment automation or calibration workflows

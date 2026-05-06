@@ -129,22 +129,22 @@ Boundaries:
 
 ## Stage 6B: GigE-Specific Controls
 
-Status: next focused stage.
+Status: complete for the current project stage.
 
-Planned direction:
+Implemented:
 
-- query GigE-specific configuration where the C SDK exposes it
-- expose carefully scoped setters with reversible hardware tests where possible
+- query GigE-specific configuration, properties, image settings, binning, and stream channel info where the C SDK exposes them
+- expose carefully scoped setters with reversible same-value hardware tests where possible
 - keep GigE support camera-local and independent from experiment orchestration
+- do not implement a network service, discovery daemon, packet streaming service, sidecar, or IPC transport
 
 ## Stage 7+: Future Expansion
 
 Prioritized future areas:
 
-- task-level acquisition helpers, such as bounded frame iterators and restore-state patterns
+- camera-local SDK primitives and broader raw FlyCapture2 C SDK coverage
 - register access as an advanced API
 - callbacks and events
-- broader raw FlyCapture2 C SDK coverage
 - release stabilization and migration documentation
 
 Deferred areas remain outside this project:

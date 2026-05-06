@@ -25,7 +25,17 @@ from flycapture2_c.ctypes_defs import (
     fc2TriggerModeInfo,
 )
 from flycapture2_c.errors import FlyCapture2NotSupportedError
-from flycapture2_c.raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2StrobeControl, fc2StrobeInfo
+from flycapture2_c.raw.structs import (
+    fc2CameraStats,
+    fc2EmbeddedImageInfo,
+    fc2GigEConfig,
+    fc2GigEImageSettings,
+    fc2GigEImageSettingsInfo,
+    fc2GigEProperty,
+    fc2GigEStreamChannel,
+    fc2StrobeControl,
+    fc2StrobeInfo,
+)
 from flycapture2_c.raw.specs import FUNCTION_SPECS, FunctionSpec, bind_function_specs
 
 
@@ -75,6 +85,22 @@ def test_raw_specs_cover_current_binding_surface() -> None:
         "fc2SetTriggerModeBroadcast",
         "fc2FireSoftwareTrigger",
         "fc2FireSoftwareTriggerBroadcast",
+        "fc2GetGigEProperty",
+        "fc2SetGigEProperty",
+        "fc2DiscoverGigEPacketSize",
+        "fc2QueryGigEImagingMode",
+        "fc2GetGigEImagingMode",
+        "fc2SetGigEImagingMode",
+        "fc2GetGigEImageSettingsInfo",
+        "fc2GetGigEImageSettings",
+        "fc2SetGigEImageSettings",
+        "fc2GetGigEImageBinningSettings",
+        "fc2SetGigEImageBinningSettings",
+        "fc2GetNumStreamChannels",
+        "fc2GetGigEStreamChannelInfo",
+        "fc2SetGigEStreamChannelInfo",
+        "fc2GetGigEConfig",
+        "fc2SetGigEConfig",
         "fc2GetStrobeInfo",
         "fc2GetStrobe",
         "fc2SetStrobe",
@@ -110,6 +136,22 @@ def test_raw_specs_have_expected_representative_signatures() -> None:
     assert FUNCTION_SPECS["fc2FireSoftwareTrigger"].required is False
     assert FUNCTION_SPECS["fc2FireSoftwareTriggerBroadcast"].argtypes == [fc2Context]
     assert FUNCTION_SPECS["fc2FireSoftwareTriggerBroadcast"].required is False
+    assert FUNCTION_SPECS["fc2GetGigEConfig"].argtypes == [fc2Context, ctypes.POINTER(fc2GigEConfig)]
+    assert FUNCTION_SPECS["fc2GetGigEConfig"].required is False
+    assert FUNCTION_SPECS["fc2GetGigEProperty"].argtypes == [fc2Context, ctypes.POINTER(fc2GigEProperty)]
+    assert FUNCTION_SPECS["fc2GetGigEImageSettingsInfo"].argtypes == [
+        fc2Context,
+        ctypes.POINTER(fc2GigEImageSettingsInfo),
+    ]
+    assert FUNCTION_SPECS["fc2SetGigEImageSettings"].argtypes == [
+        fc2Context,
+        ctypes.POINTER(fc2GigEImageSettings),
+    ]
+    assert FUNCTION_SPECS["fc2GetGigEStreamChannelInfo"].argtypes == [
+        fc2Context,
+        ctypes.c_uint32,
+        ctypes.POINTER(fc2GigEStreamChannel),
+    ]
     assert FUNCTION_SPECS["fc2GetFormat7Info"].argtypes == [
         fc2Context,
         ctypes.POINTER(fc2Format7Info),
@@ -178,6 +220,22 @@ def test_bind_function_specs_allows_missing_optional_functions() -> None:
         "ResetStats",
         "fc2FireSoftwareTrigger",
         "fc2FireSoftwareTriggerBroadcast",
+        "fc2GetGigEProperty",
+        "fc2SetGigEProperty",
+        "fc2DiscoverGigEPacketSize",
+        "fc2QueryGigEImagingMode",
+        "fc2GetGigEImagingMode",
+        "fc2SetGigEImagingMode",
+        "fc2GetGigEImageSettingsInfo",
+        "fc2GetGigEImageSettings",
+        "fc2SetGigEImageSettings",
+        "fc2GetGigEImageBinningSettings",
+        "fc2SetGigEImageBinningSettings",
+        "fc2GetNumStreamChannels",
+        "fc2GetGigEStreamChannelInfo",
+        "fc2SetGigEStreamChannelInfo",
+        "fc2GetGigEConfig",
+        "fc2SetGigEConfig",
         "fc2GetGPIOPinDirection",
         "fc2SetGPIOPinDirection",
         "fc2SetGPIOPinDirectionBroadcast",

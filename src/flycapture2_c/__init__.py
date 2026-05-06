@@ -7,6 +7,7 @@ from .errors import (
     DLLLoadError,
     FlyCapture2Error,
     Format7ValidationError,
+    GigEConfigurationError,
     GPIOConfigurationError,
     PropertyModeError,
     PropertyNotWritableError,
@@ -15,6 +16,7 @@ from .errors import (
     TriggerModeError,
     StrobeConfigurationError,
     UnsupportedFormat7Error,
+    UnsupportedGigEError,
     UnsupportedMetadataError,
     UnsupportedPropertyError,
     UnsupportedPixelFormatError,
@@ -41,6 +43,14 @@ __all__ = [
     "Format7PacketInfo",
     "Format7Validation",
     "Format7ValidationError",
+    "GigEConfig",
+    "GigEConfigurationError",
+    "GigEImageBinningSettings",
+    "GigEImageSettings",
+    "GigEImageSettingsInfo",
+    "GigEProperty",
+    "GigEPropertyType",
+    "GigEStreamChannelInfo",
     "GPIOConfigurationError",
     "EmbeddedImageField",
     "EmbeddedImageInfo",
@@ -61,6 +71,7 @@ __all__ = [
     "TriggerModeError",
     "TriggerModeInfo",
     "UnsupportedFormat7Error",
+    "UnsupportedGigEError",
     "UnsupportedMetadataError",
     "UnsupportedPropertyError",
     "UnsupportedPixelFormatError",
@@ -134,6 +145,34 @@ def __getattr__(name: str):
         from .metadata import ImageMetadata
 
         return ImageMetadata
+    if name == "GigEConfig":
+        from .gige import GigEConfig
+
+        return GigEConfig
+    if name == "GigEImageBinningSettings":
+        from .gige import GigEImageBinningSettings
+
+        return GigEImageBinningSettings
+    if name == "GigEImageSettings":
+        from .gige import GigEImageSettings
+
+        return GigEImageSettings
+    if name == "GigEImageSettingsInfo":
+        from .gige import GigEImageSettingsInfo
+
+        return GigEImageSettingsInfo
+    if name == "GigEProperty":
+        from .gige import GigEProperty
+
+        return GigEProperty
+    if name == "GigEPropertyType":
+        from .gige import GigEPropertyType
+
+        return GigEPropertyType
+    if name == "GigEStreamChannelInfo":
+        from .gige import GigEStreamChannelInfo
+
+        return GigEStreamChannelInfo
     if name == "GrabMode":
         from .config import GrabMode
 

@@ -19,12 +19,13 @@ Current capabilities:
 - camera diagnostic statistics readback, with write-gated stats reset support when the SDK exports it
 - strobe source capability/readback and reversible strobe configuration
 - direct GPIO pin-direction helpers where the FlyCapture2 C API exposes them
+- GigE-specific config, property, image settings, binning, stream channel readback, and conservative same-value write tests
 - convenience property methods for common controls such as exposure, shutter, gain, frame rate, brightness, gamma, white balance, trigger delay, and temperature readback
 - mock camera support and default no-hardware tests
 - opt-in hardware smoke and hardware pytest suites
 
-Current stage: Stage 6A software trigger firing is complete. The next focused
-hardware-control stage is Stage 6B GigE-specific controls.
+Current stage: Stage 6B GigE-specific controls is complete. The next focused
+area is broader raw SDK coverage.
 
 The implementation is moving toward a two-layer architecture:
 
@@ -48,7 +49,7 @@ Project boundaries:
 - no GUI or preview UI
 - no sidecar process, IPC/shared memory, or ZMQ transport
 - no `optic_system` backend code
-- no experiment scheduling, calibration workflow, or reconstruction pipeline
+- no experiment scheduling, network service, calibration workflow, or reconstruction pipeline
 
 This repository currently carries the active FlyCapture2 wrapper, tests, docs,
 and hardware smoke tooling. A future distilled repository may be created from

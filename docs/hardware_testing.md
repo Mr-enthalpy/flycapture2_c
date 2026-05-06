@@ -2,8 +2,8 @@
 
 Hardware access is always opt-in.
 
-Stage 6A software trigger firing hardware coverage is present. The next
-hardware-facing stage is Stage 6B GigE-specific controls.
+Stage 6B GigE-specific hardware coverage is present. Broader raw SDK coverage
+is the next expansion area.
 
 Environment variables:
 
@@ -97,6 +97,21 @@ The write-gated tests include an API smoke test and a fire-and-grab test. They
 change trigger mode, fire the SDK software trigger, restore prior state, and do
 not become an experiment workflow or external-device synchronization test.
 
+GigE-specific hardware tests:
+
+```powershell
+FLYCAPTURE2_HARDWARE_TEST=1 python -m pytest tests/hardware/test_hardware_gige_readonly.py
+
+FLYCAPTURE2_HARDWARE_TEST=1
+FLYCAPTURE2_HARDWARE_WRITE_TEST=1
+python -m pytest tests/hardware/test_hardware_gige_write_reversible.py
+```
+
+GigE tests skip cleanly when the connected camera is not GigE or the SDK/DLL
+does not expose the requested GigE call. Write-gated tests use same-value smoke
+checks for conservative settings. They do not actively change IP address,
+subnet mask, gateway, packet size, packet delay, or stream channel settings.
+
 Notes:
 
 - default `pytest` skips all hardware tests
@@ -110,6 +125,7 @@ Notes:
 - strobe write tests require both hardware opt-in flags, restore the original strobe state, and currently perform a same-value write smoke test
 - the current strobe write test does not actively toggle external strobe output and does not require an external loopback fixture
 - GPIO write tests require both hardware opt-in flags and use conservative restore patterns
+- GigE write tests require both hardware opt-in flags, restore original state where possible, and avoid risky network-changing writes
 - `FLYCAPTURE2_CAPTURE_TIMEOUT_MS` is currently a wall-clock threshold around `read_frame()`
 - it is not an SDK-internal grab timeout configuration
 - `Camera.set_grab_timeout(ms)` configures the SDK-level `RetrieveBuffer()` timeout
