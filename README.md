@@ -22,10 +22,11 @@ Current capabilities:
 - GigE-specific config, property, image settings, binning, stream channel readback, and conservative same-value write tests
 - convenience property methods for common controls such as exposure, shutter, gain, frame rate, brightness, gamma, white balance, trigger delay, and temperature readback
 - mock camera support and default no-hardware tests
-- opt-in hardware smoke and hardware pytest suites
+- opt-in hardware smoke, JSON capability reporting, and deterministic hardware validation suites
 
-Current stage: Stage 6B GigE-specific controls is complete. The next focused
-area is broader raw SDK coverage.
+Current stage: Stage 6.5 systematic testing and hardware qualification is
+complete for the current project stage. SDK feature expansion is paused for this
+stabilization milestone.
 
 The implementation is moving toward a two-layer architecture:
 

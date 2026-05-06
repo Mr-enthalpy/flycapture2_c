@@ -1,10 +1,11 @@
 # API Coverage
 
-This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim. Stage 6B GigE-specific controls are complete for the current project scope; broader raw SDK coverage is next.
+This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim. Stage 6B GigE-specific controls are complete for the current project scope. Stage 6.5 pauses SDK feature expansion and adds systematic testing and hardware qualification for the existing surface.
 
 | Category | Function | Structs required | Raw binding status | High-level API status | No-hardware test status | Hardware readonly test status | Hardware write test status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Raw infrastructure | current wrapped function signatures | `FunctionSpec` registry | `raw/specs.py` introduced | used by existing `FlyCapture2CAPI` binding path | covered | not-applicable | not-applicable | Stage 4.5 bridge; checked calls still live in top-level `api.py` for compatibility. |
+| Validation tooling | current wrapped capability surface | existing high-level wrappers | not-applicable | scripts only | covered by no-hardware script tests | `scripts/hardware_capability_report.py` and `scripts/run_hardware_validation.py` | write groups require `--include-write` and `FLYCAPTURE2_HARDWARE_WRITE_TEST=1` | No new SDK function surface; diagnostic and pytest orchestration only. |
 | Context | `fc2CreateContext` | `fc2Context` | raw-bound | internal lifecycle | covered | covered through opt-in enumerate/open tests | not-applicable | Lazy loaded. |
 | Context | `fc2DestroyContext` | `fc2Context` | raw-bound | internal lifecycle | covered | covered through opt-in enumerate/open tests | not-applicable | Cleanup path. |
 | Bus | `fc2GetNumOfCameras` | `fc2Context` | raw-bound | `enumerate_cameras`, `Camera.open` | covered | covered | not-applicable | Hardware tests remain opt-in. |

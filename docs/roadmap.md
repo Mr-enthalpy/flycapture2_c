@@ -138,6 +138,23 @@ Implemented:
 - keep GigE support camera-local and independent from experiment orchestration
 - do not implement a network service, discovery daemon, packet streaming service, sidecar, or IPC transport
 
+## Stage 6.5: Systematic Testing and Hardware Qualification
+
+Status: complete for the current project stage.
+
+Scope:
+
+- add a readonly JSON capability report for current wrapper areas
+- add a deterministic hardware pytest runner
+- keep hardware tests opt-in and write tests separately gated
+- normalize documentation for readonly, reversible write, and same-value smoke testing
+- avoid new SDK feature surface while stabilizing the existing wrapper
+
+Boundaries:
+
+- no register access, callbacks, events, or broader raw SDK expansion in this milestone
+- no GUI, sidecar, IPC, shared memory, ZMQ, `optic_system`, experiment scheduling, LCD/projector sync, calibration, reconstruction, or acquisition workflow API
+
 ## Stage 7+: Future Expansion
 
 Prioritized future areas:
