@@ -545,12 +545,17 @@ Stage 5A embedded metadata and diagnostics
 Stage 5B strobe / GPIO
 Stage 6A software trigger firing
 Stage 6B GigE-specific controls
-Stage 7  broad raw SDK coverage
-Stage 8  migration documentation from pyflycap2 / PyCapture2
-Stage 9  release stabilization
+Stage 6.5 stabilization and hardware validation normalization
+Stage 6.6 release readiness and API hardening, current active phase
+Stage 7+ future SDK expansion only when explicitly re-scoped
 ```
 
 Prioritize APIs that remove GUI dependency from automated scripts.
+
+During Stage 6.6, SDK expansion is paused unless explicitly requested. Roadmap
+work should focus on release readiness, API consistency, packaging/version
+metadata, documentation, no-hardware regression coverage, and validation
+workflow clarity.
 
 Priority order:
 
@@ -751,7 +756,8 @@ Suggested version milestones:
 0.2.x  raw binding infrastructure, trigger, Format7, ROI, pixel format, capture config
 0.3.x  complete property system
 0.4.x  embedded metadata, strobe, GPIO, GigE basics
-0.5.x  broad raw SDK coverage and migration documentation
+0.5.x  software trigger, GigE controls, hardware validation tooling, migration documentation
+0.6.0  current Stage 6.6 release-readiness and API-hardening snapshot
 1.0.0  stable high-level API, documented migration path, tested hardware workflows
 ```
 
