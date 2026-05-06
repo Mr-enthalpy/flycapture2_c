@@ -44,9 +44,9 @@ GENERATED_PATHS = (
 )
 
 
-def run(args: list[str]) -> None:
+def run(args: list[str], *, cwd: Path = ROOT) -> None:
     print("+ " + " ".join(args), flush=True)
-    subprocess.run(args, cwd=ROOT, check=True)
+    subprocess.run(args, cwd=cwd, check=True)
 
 
 def remove_generated_artifacts() -> None:
@@ -122,6 +122,25 @@ def audit_artifact(artifact: Path) -> None:
     print(f"audited {len(names)} entries in {artifact.name}: ok", flush=True)
 
 
+def install_and_smoke(artifact: Path) -> None:
+    with tempfile.TemporaryDirectory(prefix="flycapture2_c_install_") as tmp:
+        venv_dir = Path(tmp) / "venv"
+        run([sys.executable, "-m", "venv", str(venv_dir)])
+        python = venv_dir / "Scripts" / "python.exe"
+        if not python.exists():
+            python = venv_dir / "bin" / "python"
+        run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
+        run([str(python), "-m", "pip", "install", str(artifact)])
+        run(
+            [
+                str(python),
+                "-c",
+                "import flycapture2_c; print(flycapture2_c.__version__)",
+            ]
+        )
+    print(f"clean install smoke passed: {artifact.name}", flush=True)
+
+
 def main() -> int:
     run([sys.executable, "-m", "pytest", "-q"])
     run(
@@ -136,8 +155,10 @@ def main() -> int:
     try:
         for artifact in artifacts:
             audit_artifact(artifact)
+            install_and_smoke(artifact)
         print(
-            "artifact audit passed: " + ", ".join(artifact.name for artifact in artifacts),
+            "artifact audit and install smoke passed: "
+            + ", ".join(artifact.name for artifact in artifacts),
             flush=True,
         )
     finally:

@@ -1,9 +1,9 @@
 # Release Checklist
 
-This checklist is for the `0.6.0` Stage 6.6 release candidate. Stage 6.6 is
-release readiness and API hardening only; it is not full FlyCapture2 SDK
-coverage, broad camera-model qualification, a GUI workflow, or an experiment
-framework.
+This checklist is for the `0.6.0` Stage 6.7 release candidate. Stage 6.7 is
+release candidate hardening and reproducibility only; it is not full
+FlyCapture2 SDK coverage, broad camera-model qualification, a GUI workflow, or
+an experiment framework.
 
 ## Clean Checkout
 
@@ -92,7 +92,23 @@ For a one-command local release gate, run:
 ```
 
 The script runs default tests, import smoke, an isolated wheel build, and a
-wheel/sdist content audit.
+wheel/sdist content audit, then installs both artifacts into clean virtual
+environments and imports the package from each install.
+
+## Local No-Hardware Matrix
+
+When multiple Python versions are installed locally, run the CI-equivalent
+matrix script:
+
+```powershell
+py -3.13 scripts\check_ci_matrix.py
+```
+
+The script probes Python 3.8 through 3.13 with the Windows `py` launcher where
+available, creates a clean venv per interpreter, installs `.[dev]`, runs
+default pytest, and verifies import smoke with invalid SDK/DLL paths. Missing
+local interpreters are reported rather than treated as release failures; GitHub
+Actions is the authoritative full Windows matrix.
 
 ## Artifact Content Audit
 
@@ -148,6 +164,9 @@ Capability reports must be written under `outputs/` or another ignored local
 directory. They may be attached to internal validation notes, but generated JSON
 reports are not release source files and must not be included in wheels or
 source distributions.
+
+Summarize release-candidate evidence in `docs/release_evidence.md`; keep raw
+generated reports under ignored local output directories.
 
 ## Release Boundary
 

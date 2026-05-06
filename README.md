@@ -4,6 +4,84 @@
 It is intended to replace legacy `pyflycap2` / `PyCapture2` usage with a
 scriptable, non-GUI SDK wrapper.
 
+## Install
+
+Install the Python wrapper from a local checkout:
+
+```powershell
+python -m pip install .
+```
+
+For development and release checks:
+
+```powershell
+python -m pip install -e ".[dev]"
+python scripts/check_release.py
+```
+
+The FlyCapture2 SDK must be installed separately. This project does not bundle
+vendor SDK files, DLLs, drivers, headers, libraries, or sample binaries. Point
+the wrapper at the SDK with one of these environment variables when the SDK is
+not in the default install location:
+
+```powershell
+$env:FLYCAPTURE2_SDK_DIR="C:\Program Files\Point Grey Research\FlyCapture2"
+$env:FLYCAPTURE2_DLL_DIR="C:\Program Files\Point Grey Research\FlyCapture2\bin64"
+```
+
+Importing `flycapture2_c` does not load the vendor DLL. DLL loading happens only
+when an explicit camera operation needs the FlyCapture2 C runtime.
+
+## Quick Start
+
+Enumerate cameras:
+
+```python
+from flycapture2_c import enumerate_cameras
+
+for camera in enumerate_cameras():
+    print(camera)
+```
+
+Open one camera and grab one frame:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(index=0) as cam:
+    cam.start()
+    frame = cam.read_frame()
+    print(frame.array.shape, frame.array.dtype)
+```
+
+Configure without GUI:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_pixel_format("MONO8")
+    cam.set_roi(offset_x=0, offset_y=0, width=1024, height=768)
+    cam.set_shutter(5.0, auto=False)
+    cam.set_gain(0.0, auto=False)
+    cam.disable_trigger()
+    cam.start()
+    frame = cam.read_frame()
+```
+
+## Common Diagnostics
+
+- `SDKNotFoundError`: set `FLYCAPTURE2_SDK_DIR` or install the FlyCapture2 SDK.
+- `DLLLoadError`: set `FLYCAPTURE2_DLL_DIR` to the directory containing the
+  FlyCapture2 C runtime DLL, or check the system DLL search path.
+- `UnsupportedPixelFormatError`: the camera may accept a pixel format that this
+  wrapper does not decode into a structured NumPy array yet.
+- `UnsupportedGigEError`, `UnsupportedStrobeError`, or similar typed errors:
+  the connected camera or installed DLL does not expose that camera-local SDK
+  capability.
+- Hardware tests are skipped unless `FLYCAPTURE2_HARDWARE_TEST=1`; write tests
+  also require `FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
+
 Current capabilities:
 
 - lazy SDK/DLL discovery and loading
@@ -50,11 +128,12 @@ Format7/ROI/pixel format, SDK capture config, properties, embedded metadata,
 diagnostics, strobe/GPIO, GigE controls, raw function specs, and hardware
 validation tooling.
 
-Active work is Stage 6.6: release readiness and API hardening. This milestone
-audits public API boundaries, documentation, version metadata, packaging, and
-validation workflows without adding new SDK feature surface. Current hardware
-validation remains limited to the available camera. Broader camera-model and
-multi-camera validation is deferred until more hardware is available.
+Active work is Stage 6.7: release candidate hardening and reproducibility. This
+milestone audits public API boundaries, documentation, version metadata,
+packaging, clean installs, artifact contents, and no-hardware CI reproducibility
+without adding new SDK feature surface. Current hardware validation remains
+limited to the available camera. Broader camera-model and multi-camera
+validation is deferred until more hardware is available.
 
 Default no-hardware validation:
 

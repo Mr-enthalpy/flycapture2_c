@@ -3,9 +3,10 @@
 This roadmap describes the current implementation state. It is not a claim of
 full FlyCapture2 SDK coverage or broad camera-model compatibility.
 
-The active phase is Stage 6.6: release readiness and API hardening. SDK feature
-expansion and broader multi-camera compatibility expansion are paused. Current
-hardware validation is limited to the physical camera that is available locally.
+The active phase is Stage 6.7: release candidate hardening and reproducibility.
+SDK feature expansion and broader multi-camera compatibility expansion are
+paused. Current hardware validation is limited to the physical camera that is
+available locally.
 
 ## Stage 0: Documentation and API Coverage
 
@@ -173,7 +174,7 @@ Hardware scope:
 
 ## Stage 6.6: Release Readiness And API Hardening
 
-Status: active.
+Status: complete for the current project stage.
 
 Stage 6.6 prepares the implemented wrapper surface for a stable internal
 release candidate without expanding SDK coverage.
@@ -201,6 +202,33 @@ Boundaries:
 
 Release readiness is not a claim of full FlyCapture2 SDK coverage or broad
 camera-model compatibility.
+
+## Stage 6.7: Release Candidate Hardening And Reproducibility
+
+Status: active.
+
+Stage 6.7 keeps the existing `0.6.0` wrapper surface stable while making the
+release candidate easier to reproduce and audit.
+
+Current priorities:
+
+- keep the frozen `0.6.x` top-level public API exports stable
+- verify default no-hardware tests and import smoke remain SDK-free
+- build and audit wheel and source distribution artifacts
+- install both wheel and sdist into clean virtual environments and import them
+- run no-hardware CI on Windows for Python 3.8 through 3.13
+- improve README and recipe discoverability without adding features
+- record hardware validation evidence when the available camera is connected
+
+Boundaries:
+
+- no new SDK bindings
+- no high-level `Camera` feature expansion
+- no register access, callbacks, events, or broader raw SDK expansion in this milestone
+- no GUI, preview UI, sidecar, IPC, shared memory, ZMQ, `optic_system`,
+  experiment scheduling, LCD/projector sync, calibration, reconstruction, or
+  acquisition workflow API
+- no claim of full SDK coverage or broad camera-model compatibility
 
 ## Stage 7+: Future Expansion
 

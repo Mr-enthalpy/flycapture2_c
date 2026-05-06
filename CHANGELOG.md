@@ -1,5 +1,20 @@
 # Changelog
 
+## Unreleased - Stage 6.7 Release Candidate Hardening And Reproducibility
+
+- Hardens release reproducibility checks for default no-hardware tests, import
+  smoke, wheel/sdist builds, artifact audits, and clean venv installs from both
+  wheel and sdist.
+- Adds Windows no-hardware CI coverage for Python 3.8 through 3.13.
+- Freezes the `0.6.x` top-level `__all__` public export baseline against
+  accidental deletion or renaming.
+- Moves README quick-start material earlier: installation, separate FlyCapture2
+  SDK installation, SDK/DLL environment variables, minimal enumeration/capture
+  examples, and common diagnostics.
+
+This stage does not add FlyCapture2 SDK bindings, expand `Camera`, or claim full
+SDK coverage.
+
 ## 0.6.0 - Stage 6.6 Release Readiness And API Hardening
 
 - Classifies the top-level public API into stable high-level names, value
