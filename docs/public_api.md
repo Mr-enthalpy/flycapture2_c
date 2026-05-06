@@ -1,7 +1,8 @@
 # Public API
 
 This document classifies the names exported from `flycapture2_c.__all__` for
-the Stage 6.6 release-readiness milestone. The package remains a FlyCapture2 C
+the `0.6.x` public API baseline. Stage 6.7 hardens release candidate
+reproducibility without changing these exports. The package remains a FlyCapture2 C
 SDK wrapper: no GUI, preview UI, sidecar, shared memory, ZMQ/IPC,
 `optic_system`, LCD/projector synchronization, experiment scheduling,
 acquisition workflow orchestration, calibration workflow, or reconstruction
@@ -9,6 +10,9 @@ workflow is part of this public API.
 
 Importing these names must remain SDK-free and hardware-free. The vendor DLL is
 loaded only by explicit camera operations.
+
+The no-hardware drift test compares `flycapture2_c.__all__` with the frozen
+`0.6.x` baseline and verifies that every top-level export is classified here.
 
 ## Stable High-Level API
 

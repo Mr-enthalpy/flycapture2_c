@@ -2,10 +2,65 @@
 
 These examples use only the FlyCapture2 C SDK wrapper. They do not require any GUI path.
 
-Status note: Stage 6.6 is release readiness and API hardening. Strobe, GPIO,
-and GigE availability are camera-model-dependent and wiring-dependent. Current
-hardware validation evidence is limited to the available camera; broader
-camera-model validation is deferred.
+Status note: Stage 6.7 is release candidate hardening and reproducibility.
+Strobe, GPIO, and GigE availability are camera-model-dependent and
+wiring-dependent. Current hardware validation evidence is limited to the
+available camera; broader camera-model validation is deferred.
+
+## Enumerate Cameras
+
+```python
+from flycapture2_c import enumerate_cameras
+
+for descriptor in enumerate_cameras():
+    print(descriptor)
+```
+
+## Grab One Frame
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(index=0) as cam:
+    cam.disable_trigger()
+    cam.start()
+    frame = cam.read_frame()
+    print(frame.array.shape, frame.array.dtype, frame.pixel_format)
+```
+
+The returned NumPy array owns its memory and remains valid after the next SDK
+call.
+
+## Grab A Short Sequence
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(index=0) as cam:
+    cam.disable_trigger()
+    cam.start()
+    frames = [cam.read_frame() for _ in range(10)]
+
+print(len(frames))
+```
+
+Looping remains caller-controlled. This package does not provide an acquisition
+workflow runner or experiment scheduler.
+
+## Fixed Shutter And Gain
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_shutter(5.0, auto=False)
+    cam.set_gain(0.0, auto=False)
+    cam.start()
+    frame = cam.read_frame()
+```
+
+Use `get_property_info()` first when a script needs to validate ranges before
+choosing camera-specific values.
 
 ## Configure External Hardware Trigger
 
@@ -123,6 +178,23 @@ with Camera.open(0) as cam:
 ```
 
 `read_frame()` currently decodes copied NumPy arrays for `MONO8`, `MONO16`, `RAW8`, and `RAW16`. Other SDK pixel formats may be configurable, but frame retrieval will raise `UnsupportedPixelFormatError` until an explicit decode or raw-frame path is implemented.
+
+## Configure MONO8, MONO16, RAW8, Or RAW16
+
+```python
+from flycapture2_c import Camera
+
+for pixel_format in ("MONO8", "MONO16", "RAW8", "RAW16"):
+    with Camera.open(0) as cam:
+        cam.set_pixel_format(pixel_format)
+        cam.start()
+        frame = cam.read_frame()
+        print(pixel_format, frame.array.dtype, frame.pixel_format)
+```
+
+Pixel-format support is camera-mode-dependent. For production scripts, validate
+Format7 settings and restore the original configuration when changing camera
+state.
 
 ## Validate Format7 Before Writing
 

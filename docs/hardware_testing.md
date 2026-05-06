@@ -3,11 +3,11 @@
 Hardware access is always opt-in, but readonly hardware validation should be
 routine operational practice when the available camera is connected.
 
-Stage 6.6 is release readiness and API hardening. Hardware validation remains a
-repeatable regression check against the currently available camera, not SDK
-feature expansion and not broad multi-model qualification. Multi-camera and
-multi-model validation is deferred until additional camera hardware is
-available.
+Stage 6.7 is release candidate hardening and reproducibility. Hardware
+validation remains a repeatable release evidence check against the currently
+available camera, not SDK feature expansion and not broad multi-model
+qualification. Multi-camera and multi-model validation is deferred until
+additional camera hardware is available.
 
 The scripts in this document are developer validation tools only. They do not
 provide experiment orchestration, scheduling, GUI preview, sidecar modes, IPC,
@@ -27,6 +27,7 @@ Default no-hardware validation:
 ```powershell
 python -m pytest -q
 python -c "import flycapture2_c; print('ok')"
+python scripts/check_release.py
 ```
 
 Readonly hardware validation:
@@ -37,6 +38,11 @@ $env:FLYCAPTURE2_CAMERA_INDEX="0"
 python scripts/hardware_capability_report.py --output outputs/capability_camera0.json
 python scripts/run_hardware_validation.py
 ```
+
+For release evidence, record the FlyCapture2 SDK version, camera model, serial
+number, interface type, OS version, Python version, validation command, and
+result summary. Capability report JSON should be written under `outputs/` and
+must not be committed or included in release artifacts.
 
 Run this readonly sequence routinely when the camera is connected. Unsupported
 features should skip cleanly rather than failing qualification. For example,
