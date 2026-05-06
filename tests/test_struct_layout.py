@@ -13,7 +13,13 @@ from flycapture2_c.ctypes_defs import (
     fc2TriggerMode,
     fc2TriggerModeInfo,
 )
-from flycapture2_c.raw.structs import fc2CameraStats, fc2EmbeddedImageInfo, fc2EmbeddedImageInfoProperty
+from flycapture2_c.raw.structs import (
+    fc2CameraStats,
+    fc2EmbeddedImageInfo,
+    fc2EmbeddedImageInfoProperty,
+    fc2StrobeControl,
+    fc2StrobeInfo,
+)
 
 
 def test_fc2_pgr_guid_layout() -> None:
@@ -218,3 +224,35 @@ def test_fc2_camera_stats_layout() -> None:
     assert ctypes.sizeof(fc2CameraStats) == 248
     for field_name, offset in expected_offsets.items():
         assert getattr(fc2CameraStats, field_name).offset == offset
+
+
+def test_fc2_strobe_info_layout() -> None:
+    expected_offsets = {
+        "source": 0,
+        "present": 4,
+        "readOutSupported": 8,
+        "onOffSupported": 12,
+        "polaritySupported": 16,
+        "minValue": 20,
+        "maxValue": 24,
+        "reserved": 28,
+    }
+
+    assert ctypes.sizeof(fc2StrobeInfo) == 60
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2StrobeInfo, field_name).offset == offset
+
+
+def test_fc2_strobe_control_layout() -> None:
+    expected_offsets = {
+        "source": 0,
+        "onOff": 4,
+        "polarity": 8,
+        "delay": 12,
+        "duration": 16,
+        "reserved": 20,
+    }
+
+    assert ctypes.sizeof(fc2StrobeControl) == 52
+    for field_name, offset in expected_offsets.items():
+        assert getattr(fc2StrobeControl, field_name).offset == offset

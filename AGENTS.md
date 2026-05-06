@@ -43,7 +43,7 @@ The repository is responsible for:
 9. configuring trigger mode without GUI
 10. configuring pixel format, Format7, and ROI without GUI
 11. configuring capture behavior, grab timeout, and buffer policy
-12. exposing selected GigE, strobe, GPIO, embedded metadata, and diagnostic APIs
+12. exposing selected software trigger firing, GigE, strobe, GPIO, embedded metadata, and diagnostic APIs
 13. maintaining hardware smoke tests and no-hardware unit tests
 14. documenting API coverage and migration from legacy wrappers
 
@@ -369,9 +369,16 @@ cam.get_trigger_mode()
 cam.set_trigger_mode(...)
 cam.enable_trigger(...)
 cam.disable_trigger()
+cam.fire_software_trigger()
 ```
 
 The implementation should bind SDK structures and functions such as trigger mode, trigger mode info, get trigger mode, set trigger mode, and get trigger mode info according to the vendor C headers.
+
+Software trigger firing is Stage 6A. It should expose only the FlyCapture2 C SDK
+primitive needed to fire a software trigger after software trigger mode is
+configured. Do not turn software trigger firing into an experiment scheduler,
+external-device synchronization layer, GUI workflow, sidecar, shared-memory
+transport, ZMQ/IPC workflow, or `optic_system` backend.
 
 Trigger tests must include:
 
@@ -513,7 +520,8 @@ Stage 4.5 architecture/documentation stabilization:
           API coverage consistency, no new hardware feature surface
 Stage 5A embedded metadata and diagnostics
 Stage 5B strobe / GPIO
-Stage 6  GigE-specific controls
+Stage 6A software trigger firing
+Stage 6B GigE-specific controls
 Stage 7  broad raw SDK coverage
 Stage 8  migration documentation from pyflycap2 / PyCapture2
 Stage 9  release stabilization
@@ -530,9 +538,10 @@ Priority order:
 5. complete property access
 6. embedded metadata
 7. strobe / GPIO
-8. GigE-specific controls
-9. register access
-10. callbacks and advanced event mechanisms
+8. software trigger firing
+9. GigE-specific controls
+10. register access
+11. callbacks and advanced event mechanisms
 
 ## Hardware testing policy
 
@@ -688,6 +697,7 @@ docs/recipes.md
 * disable auto exposure
 * configure hardware trigger
 * configure software trigger
+* fire software trigger
 * configure MONO8 / MONO16 / RAW8 / RAW16
 * configure ROI
 * configure grab timeout
@@ -753,3 +763,27 @@ Before accepting changes, check:
 Never require GUI interaction for a camera configuration task that the FlyCapture2 C SDK exposes programmatically.
 
 The wrapper exists specifically to make FlyCapture2 camera control scriptable, inspectable, testable, and maintainable from Python.
+
+## Experiment orchestration boundary
+
+Do not add task-level acquisition orchestration to this repository.
+
+Allowed:
+- direct SDK-level camera operations
+- camera-local getters/setters
+- frame retrieval primitives
+- explicit state read/write primitives
+- hardware smoke tests for those primitives
+
+Not allowed:
+- experiment sessions
+- workflow runners
+- multi-device synchronization
+- LCD/projector coordination
+- GUI preview workflows
+- sidecar/server modes
+- shared memory or ZMQ transports
+- `optic_system` adapters
+- automatic acquisition pipelines
+
+State-save/restore logic may appear inside tests to keep hardware safe, but it should not become a public experiment orchestration API unless explicitly re-scoped.

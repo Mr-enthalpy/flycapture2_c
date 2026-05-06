@@ -16,12 +16,15 @@ Current capabilities:
 - generic FlyCapture2 property inspection and safe property writing
 - embedded image metadata inspection/configuration and frame metadata readback
 - camera diagnostic statistics readback, with write-gated stats reset support when the SDK exports it
+- strobe source capability/readback and reversible strobe configuration
+- direct GPIO pin-direction helpers where the FlyCapture2 C API exposes them
 - convenience property methods for common controls such as exposure, shutter, gain, frame rate, brightness, gamma, white balance, trigger delay, and temperature readback
 - mock camera support and default no-hardware tests
 - opt-in hardware smoke and hardware pytest suites
 
-Current stage: Stage 5A embedded metadata and diagnostics are complete. The next
-focused stage is Stage 5B strobe/GPIO.
+Current stage: Stage 5B strobe/GPIO control is complete. The next focused
+hardware-control stage is Stage 6A software trigger firing. GigE-specific
+controls are deferred to Stage 6B.
 
 The implementation is moving toward a two-layer architecture:
 

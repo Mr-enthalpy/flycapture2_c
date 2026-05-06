@@ -2,8 +2,9 @@
 
 These examples use only the FlyCapture2 C API wrapper. They do not require any GUI path.
 
-Status note: Stage 5A embedded metadata and diagnostics are implemented. Stage
-5B strobe/GPIO is the next planned stage.
+Status note: Stage 5B strobe/GPIO control is implemented. Stage 6A is software
+trigger firing. Strobe and GPIO availability are camera-model-dependent and
+wiring-dependent.
 
 ## Configure External Hardware Trigger
 
@@ -29,7 +30,10 @@ with Camera.open(index=0) as cam:
 
 ## Configure Software Trigger Mode
 
-FlyCapture2 conventionally uses source `7` for software trigger mode. This wrapper currently configures the trigger mode; firing a software trigger is a separate SDK call and is not part of this milestone.
+FlyCapture2 conventionally uses source `7` for software trigger mode. The
+current wrapper configures software trigger mode. Stage 6A will add the SDK call
+that fires a software trigger; that remains a camera-local SDK operation, not an
+experiment scheduler or external-device synchronization workflow.
 
 ```python
 from flycapture2_c import Camera
@@ -49,6 +53,30 @@ with Camera.open(index=0) as cam:
     finally:
         cam.set_trigger_mode(old_trigger)
 ```
+
+## Planned Software Trigger Firing Pattern
+
+Stage 6A should support this no-GUI SDK-level sequence once the vendor C header
+function is bound:
+
+```python
+from flycapture2_c import Camera
+from flycapture2_c.trigger import SOFTWARE_TRIGGER_SOURCE
+
+with Camera.open(index=0) as cam:
+    old_trigger = cam.get_trigger_mode()
+    try:
+        cam.enable_trigger(source=SOFTWARE_TRIGGER_SOURCE, mode=0, parameter=0)
+        cam.start()
+        cam.fire_software_trigger()
+        frame = cam.read_frame()
+    finally:
+        cam.stop()
+        cam.set_trigger_mode(old_trigger)
+```
+
+The wrapper should only provide the SDK primitive. Timing policies, repeated
+trigger schedules, and external-device coordination belong outside this project.
 
 ## Disable Trigger Mode
 
@@ -262,3 +290,84 @@ with Camera.open(0) as cam:
 `Camera.reset_camera_stats()` resets diagnostic counters and should be treated as
 a write-like operation. Hardware tests for it require
 `FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
+
+## Inspect Strobe Source Support
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    info = cam.get_strobe_info(source=0)
+    print(info)
+```
+
+`source` is the FlyCapture2 strobe source/channel. Do not assume every camera
+exposes every source.
+
+## Reversible Strobe Configuration
+
+Save the current strobe state before writing and restore it in `finally`.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old = cam.get_strobe(source=0)
+    try:
+        cam.set_strobe(source=0, on=True, polarity=1, delay=0.0, duration=1.0)
+        current = cam.get_strobe(source=0)
+        print(current)
+    finally:
+        cam.set_strobe(old)
+```
+
+`Camera.set_strobe()` validates source support, on/off support, polarity
+support, and delay/duration range before writing. It does not require frame
+capture or embedded metadata.
+
+## GPIO Pin Direction
+
+This wrapper only exposes GPIO functions that are directly present in the
+FlyCapture2 C API.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    direction = cam.get_gpio_pin_direction(pin=0)
+    print("output" if direction else "input")
+```
+
+Changing GPIO direction is an explicit hardware write:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old = cam.get_gpio_pin_direction(pin=0)
+    try:
+        cam.set_gpio_pin_direction(pin=0, direction="input")
+    finally:
+        cam.set_gpio_pin_direction(pin=0, direction=old)
+```
+
+## Optional Strobe/GPIO Metadata Observation
+
+Embedded metadata can optionally be used to observe strobe and GPIO state after
+configuration. It is not required for strobe control.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    old_metadata = cam.get_embedded_image_info()
+    try:
+        cam.set_embedded_image_info(strobe_pattern=True, gpio_pin_state=True)
+        cam.start()
+        frame = cam.read_frame_with_info()
+        print(frame.metadata.strobe_pattern if frame.metadata else None)
+        print(frame.metadata.gpio_pin_state if frame.metadata else None)
+    finally:
+        cam.stop()
+        cam.set_embedded_image_info(old_metadata)
+```

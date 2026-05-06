@@ -73,6 +73,30 @@ class fc2CameraStats(ctypes.Structure):
         ("reserved", ctypes.c_uint32 * 16),
     ]
 
+
+class fc2StrobeInfo(ctypes.Structure):
+    _fields_ = [
+        ("source", ctypes.c_uint32),
+        ("present", BOOL),
+        ("readOutSupported", BOOL),
+        ("onOffSupported", BOOL),
+        ("polaritySupported", BOOL),
+        ("minValue", ctypes.c_float),
+        ("maxValue", ctypes.c_float),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
+
+class fc2StrobeControl(ctypes.Structure):
+    _fields_ = [
+        ("source", ctypes.c_uint32),
+        ("onOff", BOOL),
+        ("polarity", ctypes.c_uint32),
+        ("delay", ctypes.c_float),
+        ("duration", ctypes.c_float),
+        ("reserved", ctypes.c_uint32 * 8),
+    ]
+
 __all__ = [
     "fc2CameraInfo",
     "fc2CameraStats",
@@ -90,6 +114,8 @@ __all__ = [
     "fc2PGRGuid",
     "fc2Property",
     "fc2PropertyInfo",
+    "fc2StrobeControl",
+    "fc2StrobeInfo",
     "fc2TimeStamp",
     "fc2TriggerMode",
     "fc2TriggerModeInfo",

@@ -25,9 +25,9 @@ The repository historically grew through top-level `ctypes_defs.py` and
 - `raw/library.py`: DLL loading and signature binding
 - `raw/api.py`: checked low-level calls
 
-Stage 4.5 starts this work by adding the package skeleton and moving current
-function signatures into `raw/specs.py`. Future SDK expansion should use this
-registry instead of extending monolithic binding blocks.
+Stage 4.5 started this work by adding the package skeleton and moving current
+function signatures into `raw/specs.py`. Future SDK expansion should continue
+using this registry instead of extending monolithic binding blocks.
 
 ## Stage 2: Lifecycle and Acquisition
 
@@ -53,7 +53,9 @@ Status: complete for the current project stage.
 - SDK capture configuration, grab timeout, and grab mode
 - opt-in reversible hardware tests for write paths
 
-Software trigger firing is intentionally not included yet.
+Software trigger mode configuration is implemented here. Firing a software
+trigger is split out into Stage 6A so it can be implemented as a focused SDK
+primitive without experiment orchestration.
 
 ## Stage 4: Property System
 
@@ -68,9 +70,9 @@ Status: complete for the current project stage.
 
 ## Stage 4.5: Architecture and Documentation Stabilization
 
-Status: in progress.
+Status: complete for the current project stage.
 
-Goals:
+Implemented:
 
 - align README and docs with actual capabilities
 - add the raw package skeleton
@@ -94,21 +96,52 @@ does not implement strobe/GPIO control.
 
 ## Stage 5B: Strobe and GPIO
 
-Status: next focused stage.
+Status: complete for the current project stage.
 
-Planned direction:
+Implemented:
 
 - strobe info/read/write wrappers from the FlyCapture2 C headers
-- GPIO-related controls only where the C API exposes them directly
+- GPIO pin-direction read/write helpers where the C API exposes them directly
 - reversible, opt-in hardware write tests for any write path
 - no GUI, sidecar, IPC, or experiment workflow code
 
-## Stage 6+: Future Expansion
+GPIO pin-state observation remains part of embedded image metadata. Broader GPIO
+behavior through register access is intentionally deferred.
+
+## Stage 6A: Software Trigger Firing
+
+Status: next focused stage.
+
+Planned scope:
+
+- query current trigger mode
+- configure software trigger source/mode through the existing trigger API
+- bind and expose the FlyCapture2 C SDK call that fires a software trigger
+- start capture and retrieve a frame after a software trigger
+- add no-hardware tests and opt-in hardware validation
+
+Boundaries:
+
+- no experiment scheduling
+- no repeated trigger workflow runner
+- no external device synchronization
+- no GUI, sidecar, shared memory, ZMQ, IPC, or `optic_system` backend
+
+## Stage 6B: GigE-Specific Controls
+
+Status: deferred until after Stage 6A.
+
+Planned direction:
+
+- query GigE-specific configuration where the C SDK exposes it
+- expose carefully scoped setters with reversible hardware tests where possible
+- keep GigE support camera-local and independent from experiment orchestration
+
+## Stage 7+: Future Expansion
 
 Prioritized future areas:
 
 - task-level acquisition helpers, such as bounded frame iterators and restore-state patterns
-- GigE-specific controls
 - register access as an advanced API
 - callbacks and events
 - broader raw FlyCapture2 C SDK coverage

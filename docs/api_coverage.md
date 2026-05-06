@@ -1,6 +1,6 @@
 # API Coverage
 
-This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim. Stage 5A embedded metadata and diagnostics are complete for the current project scope; Stage 5B strobe/GPIO is next.
+This table tracks the FlyCapture2 C API surface wrapped by this project. It is not a full SDK coverage claim. Stage 5B strobe/GPIO control is complete for the current project scope; Stage 6A software trigger firing is next. GigE-specific controls are deferred to Stage 6B.
 
 | Category | Function | Structs required | Raw binding status | High-level API status | No-hardware test status | Hardware readonly test status | Hardware write test status | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -23,6 +23,13 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 | Metadata | `fc2SetEmbeddedImageInfo` | `fc2EmbeddedImageInfo` | raw-bound | `Camera.set_embedded_image_info` | covered | not-applicable | covered by opt-in reversible metadata write test | High-level API rejects explicit writes to unavailable fields. |
 | Diagnostics | `fc2GetStats` | `fc2CameraStats` | raw-bound | `Camera.get_camera_stats` | covered | covered by opt-in metadata readonly test | not-applicable | Readonly diagnostic counters and sensor values. |
 | Diagnostics | `ResetStats` | none | optional raw-bound | `Camera.reset_camera_stats` | covered | not-applicable | write-gated test added | Header exposes `ResetStats()` without an `fc2` prefix or context; binding is optional to tolerate DLL differences. |
+| Strobe | `fc2GetStrobeInfo` | `fc2StrobeInfo` | raw-bound | `Camera.get_strobe_info` | covered | opt-in readonly test added | not-applicable | Source/channel support is camera-model-dependent. |
+| Strobe | `fc2GetStrobe` | `fc2StrobeControl` | raw-bound | `Camera.get_strobe` | covered | opt-in readonly test added when readout is supported | used by opt-in reversible strobe write test | High-level read validates source presence and readout support. |
+| Strobe | `fc2SetStrobe` | `fc2StrobeControl` | raw-bound | `Camera.set_strobe` | covered | not-applicable | same-value write smoke test added | High-level write starts from current state, applies explicit fields, validates capabilities/ranges, and reads back. The hardware test does not actively toggle external strobe output. |
+| Strobe | `fc2SetStrobeBroadcast` | `fc2StrobeControl` | optional raw-bound | `Camera.set_strobe(..., broadcast=True)` | covered with fake API | not-applicable | not-run-by-default | Optional symbol; calling broadcast on a DLL that lacks it raises `FlyCapture2NotSupportedError`. |
+| GPIO | `fc2GetGPIOPinDirection` | none | optional raw-bound | `Camera.get_gpio_pin_direction` | covered | opt-in readonly test added | not-applicable | Optional symbol. Direct C API pin-direction read only; GPIO pin-state frame readback is embedded metadata. |
+| GPIO | `fc2SetGPIOPinDirection` | none | optional raw-bound | `Camera.set_gpio_pin_direction` | covered | not-applicable | opt-in same-value write test added | Optional symbol. Write is explicit and opt-in for hardware tests. No register-level GPIO control is implemented. |
+| GPIO | `fc2SetGPIOPinDirectionBroadcast` | none | optional raw-bound | `Camera.set_gpio_pin_direction(..., broadcast=True)` | covered with fake API | not-applicable | not-run-by-default | Optional symbol. Direct C API broadcast direction write only. |
 | Properties | `fc2GetPropertyInfo` | `fc2PropertyInfo` | raw-bound | `Camera.get_property_info`, `Camera.list_property_infos`, `Camera.snapshot_properties` | covered | covered by opt-in property readonly test | covered through opt-in reversible property test | All known `PropertyType` values are discoverable. |
 | Properties | `fc2GetProperty` | `fc2Property` | raw-bound | `Camera.get_property`, `Camera.get_property_raw`, `Camera.list_properties`, convenience getters | covered | covered by opt-in property readonly test | covered through opt-in reversible property test | Typed dataclass result for safe API, raw ctypes for advanced API. |
 | Properties | `fc2SetProperty` | `fc2Property` | raw-bound | `Camera.set_property`, `set_property_raw`, `set_property_abs`, `set_property_integer`, `set_property_on_off`, `set_property_auto`, `set_property_one_push`, convenience setters | covered | not-applicable | covered through opt-in reversible property test | Strict generic helpers check present, mode support, write support, and ranges. |
@@ -30,6 +37,7 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 | Trigger | `fc2GetTriggerMode` | `fc2TriggerMode` | raw-bound | `Camera.get_trigger_mode` | covered | covered by opt-in trigger readonly test | covered by opt-in reversible trigger write test | Dedicated trigger API, no GUI. |
 | Trigger | `fc2SetTriggerMode` | `fc2TriggerMode` | raw-bound | `Camera.set_trigger_mode`, `Camera.enable_trigger`, `Camera.disable_trigger` | covered with fake API | not-applicable | covered by opt-in reversible trigger write test | Writes save and restore old trigger state in hardware test. |
 | Trigger | `fc2SetTriggerModeBroadcast` | `fc2TriggerMode` | raw-bound | explicit `broadcast=True` | covered with fake API | not-applicable | not-run-by-default | Bound because the C header exposes it and the signature is straightforward. |
+| Trigger | software trigger firing SDK call | pending header audit | planned for Stage 6A | planned | planned | planned | planned with explicit write gating if camera state changes | Scope is SDK-level software trigger firing only: query/configure trigger mode, fire software trigger, start capture, retrieve frame. No experiment scheduling or external-device synchronization. |
 | Format7 | `fc2GetFormat7Info` | `fc2Format7Info` | raw-bound | `Camera.get_format7_info` | covered | opt-in readonly test added | not-applicable | Queries mode support and pixel format mask. |
 | Format7 | `fc2ValidateFormat7Settings` | `fc2Format7ImageSettings`, `fc2Format7PacketInfo` | raw-bound | `Camera.validate_format7` | covered | not-applicable | used by opt-in reversible Format7 write test | Validation does not apply settings. |
 | Format7 | `fc2GetFormat7Configuration` | `fc2Format7ImageSettings` | raw-bound | `Camera.get_format7_configuration` | covered | opt-in readonly test added when camera is already in Format7 | used by opt-in reversible Format7 write test | SDK call only succeeds when camera is in Format7. |
@@ -41,7 +49,5 @@ This table tracks the FlyCapture2 C API surface wrapped by this project. It is n
 Deferred in this milestone:
 
 - GigE
-- strobe / GPIO control (Stage 5B)
 - register access
-- software trigger firing
 - callbacks / events
