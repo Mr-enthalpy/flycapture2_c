@@ -24,9 +24,25 @@ Current capabilities:
 - mock camera support and default no-hardware tests
 - opt-in hardware smoke, JSON capability reporting, and deterministic hardware validation suites
 
-Current stage: Stage 6.5 systematic testing and hardware qualification is
-complete for the current project stage. SDK feature expansion is paused for this
-stabilization milestone.
+## Current Project Phase
+
+The current major non-GUI camera-control surfaces are implemented for the
+project scope: lifecycle, acquisition, trigger control, software trigger firing,
+Format7/ROI/pixel format, SDK capture config, properties, embedded metadata,
+diagnostics, strobe/GPIO, GigE controls, raw function specs, and hardware
+validation tooling.
+
+Active work is Stage 6.5: stabilization and hardware validation normalization
+on the available camera. Routine validation uses:
+
+```powershell
+python scripts/hardware_capability_report.py --output outputs/capability_camera0.json
+python scripts/run_hardware_validation.py
+```
+
+Broader camera-model validation is deferred until more hardware is available.
+The project remains a FlyCapture2 C SDK wrapper, not an experiment framework,
+camera server, GUI application, or acquisition workflow engine.
 
 The implementation is moving toward a two-layer architecture:
 
