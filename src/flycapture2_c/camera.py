@@ -615,6 +615,17 @@ class Camera:
     def disable_trigger(self, *, broadcast: bool = False) -> TriggerMode:
         return self.set_trigger_mode(on_off=False, broadcast=broadcast)
 
+    def fire_software_trigger(self, *, broadcast: bool = False) -> None:
+        """Fire the SDK software trigger primitive.
+
+        This does not configure trigger mode, start capture, retrieve a frame,
+        sleep, or poll. Callers are responsible for the surrounding camera
+        state and timing.
+        """
+        self._require_open()
+        assert self._context is not None
+        self._api.fire_software_trigger(self._context, broadcast=broadcast)
+
     def get_property_info(self, property_type: PropertyType | str | int) -> CameraPropertyInfo:
         self._require_open()
         assert self._context is not None

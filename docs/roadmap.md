@@ -54,8 +54,8 @@ Status: complete for the current project stage.
 - opt-in reversible hardware tests for write paths
 
 Software trigger mode configuration is implemented here. Firing a software
-trigger is split out into Stage 6A so it can be implemented as a focused SDK
-primitive without experiment orchestration.
+trigger is covered by Stage 6A as a focused SDK primitive without experiment
+orchestration.
 
 ## Stage 4: Property System
 
@@ -110,14 +110,14 @@ behavior through register access is intentionally deferred.
 
 ## Stage 6A: Software Trigger Firing
 
-Status: next focused stage.
+Status: complete for the current project stage.
 
-Planned scope:
+Implemented:
 
 - query current trigger mode
 - configure software trigger source/mode through the existing trigger API
 - bind and expose the FlyCapture2 C SDK call that fires a software trigger
-- start capture and retrieve a frame after a software trigger
+- opt-in hardware validation that starts capture and retrieves one frame after a software trigger
 - add no-hardware tests and opt-in hardware validation
 
 Boundaries:
@@ -129,7 +129,7 @@ Boundaries:
 
 ## Stage 6B: GigE-Specific Controls
 
-Status: deferred until after Stage 6A.
+Status: next focused stage.
 
 Planned direction:
 

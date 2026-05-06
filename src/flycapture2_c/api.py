@@ -242,6 +242,11 @@ class FlyCapture2CAPI:
             "fc2SetTriggerModeBroadcast",
         )
 
+    def fire_software_trigger(self, context: fc2Context, *, broadcast: bool = False) -> None:
+        operation = "fc2FireSoftwareTriggerBroadcast" if broadcast else "fc2FireSoftwareTrigger"
+        function = self._require_function(operation)
+        self._check(function(context), operation)
+
     def get_strobe_info(self, context: fc2Context, source: int) -> fc2StrobeInfo:
         info = fc2StrobeInfo()
         info.source = int(source)

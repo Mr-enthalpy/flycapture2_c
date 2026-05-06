@@ -2,9 +2,8 @@
 
 These examples use only the FlyCapture2 C API wrapper. They do not require any GUI path.
 
-Status note: Stage 5B strobe/GPIO control is implemented. Stage 6A is software
-trigger firing. Strobe and GPIO availability are camera-model-dependent and
-wiring-dependent.
+Status note: Stage 6A software trigger firing is implemented. Strobe and GPIO
+availability are camera-model-dependent and wiring-dependent.
 
 ## Configure External Hardware Trigger
 
@@ -30,10 +29,9 @@ with Camera.open(index=0) as cam:
 
 ## Configure Software Trigger Mode
 
-FlyCapture2 conventionally uses source `7` for software trigger mode. The
-current wrapper configures software trigger mode. Stage 6A will add the SDK call
-that fires a software trigger; that remains a camera-local SDK operation, not an
-experiment scheduler or external-device synchronization workflow.
+FlyCapture2 commonly uses source `7` for software trigger mode, and this
+wrapper exposes that value as `SOFTWARE_TRIGGER_SOURCE`. Confirm support with
+`get_trigger_mode_info()` on the connected camera before writing.
 
 ```python
 from flycapture2_c import Camera
@@ -54,29 +52,34 @@ with Camera.open(index=0) as cam:
         cam.set_trigger_mode(old_trigger)
 ```
 
-## Planned Software Trigger Firing Pattern
+## Fire a Software Trigger
 
-Stage 6A should support this no-GUI SDK-level sequence once the vendor C header
-function is bound:
+This is a no-GUI SDK-level sequence. `fire_software_trigger()` only fires the
+SDK software trigger; it does not configure trigger mode, start capture, retrieve
+a frame, sleep, poll, or schedule repeated triggers.
 
 ```python
 from flycapture2_c import Camera
 from flycapture2_c.trigger import SOFTWARE_TRIGGER_SOURCE
 
 with Camera.open(index=0) as cam:
+    info = cam.get_trigger_mode_info()
+    if not info.software_trigger_supported:
+        raise RuntimeError("This camera does not report software trigger support.")
+
     old_trigger = cam.get_trigger_mode()
     try:
         cam.enable_trigger(source=SOFTWARE_TRIGGER_SOURCE, mode=0, parameter=0)
         cam.start()
         cam.fire_software_trigger()
-        frame = cam.read_frame()
+        frame = cam.read_frame_with_info()
     finally:
         cam.stop()
         cam.set_trigger_mode(old_trigger)
 ```
 
-The wrapper should only provide the SDK primitive. Timing policies, repeated
-trigger schedules, and external-device coordination belong outside this project.
+Timing policies, repeated trigger schedules, and external-device coordination
+belong outside this project.
 
 ## Disable Trigger Mode
 

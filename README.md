@@ -11,6 +11,7 @@ Current capabilities:
 - start/stop capture and frame retrieval into owned NumPy arrays
 - camera metadata, video mode, and frame-rate readback
 - hardware trigger mode configuration without GUI
+- software trigger firing without GUI
 - Format7, ROI, and camera pixel-format configuration
 - SDK capture configuration, including grab timeout and grab mode
 - generic FlyCapture2 property inspection and safe property writing
@@ -22,9 +23,8 @@ Current capabilities:
 - mock camera support and default no-hardware tests
 - opt-in hardware smoke and hardware pytest suites
 
-Current stage: Stage 5B strobe/GPIO control is complete. The next focused
-hardware-control stage is Stage 6A software trigger firing. GigE-specific
-controls are deferred to Stage 6B.
+Current stage: Stage 6A software trigger firing is complete. The next focused
+hardware-control stage is Stage 6B GigE-specific controls.
 
 The implementation is moving toward a two-layer architecture:
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import ctypes
 
+import pytest
+
 from flycapture2_c.api import FlyCapture2CAPI
 from flycapture2_c.camera import Camera
 from flycapture2_c.ctypes_defs import (
@@ -13,7 +15,7 @@ from flycapture2_c.ctypes_defs import (
     fc2TriggerMode,
     fc2TriggerModeInfo,
 )
-from flycapture2_c.errors import TriggerModeError
+from flycapture2_c.errors import CameraStateError, FlyCapture2NotSupportedError, TriggerModeError
 from flycapture2_c.trigger import SOFTWARE_TRIGGER_SOURCE, TriggerMode, TriggerModeInfo
 
 
@@ -46,6 +48,8 @@ class TriggerFakeAPI:
         self._context = object()
         self.set_trigger_mode_calls = 0
         self.set_trigger_mode_broadcast_calls = 0
+        self.fire_software_trigger_calls = 0
+        self.fire_software_trigger_broadcast_calls = 0
         self.last_written_trigger_mode: fc2TriggerMode | None = None
         self.trigger_info = fc2TriggerModeInfo()
         self.trigger_info.present = 1
@@ -119,6 +123,13 @@ class TriggerFakeAPI:
         self.last_written_trigger_mode = _copy_trigger_mode(trigger_mode)
         self.trigger_mode = _copy_trigger_mode(trigger_mode)
 
+    def fire_software_trigger(self, context, *, broadcast: bool = False) -> None:
+        assert context is self._context
+        if broadcast:
+            self.fire_software_trigger_broadcast_calls += 1
+        else:
+            self.fire_software_trigger_calls += 1
+
 
 def _copy_trigger_mode(source: fc2TriggerMode) -> fc2TriggerMode:
     target = fc2TriggerMode()
@@ -180,6 +191,10 @@ def test_raw_trigger_function_specs_are_bound() -> None:
     assert dll.fc2SetTriggerMode.restype is fc2Error
     assert dll.fc2SetTriggerModeBroadcast.argtypes == [fc2Context, ctypes.POINTER(fc2TriggerMode)]
     assert dll.fc2SetTriggerModeBroadcast.restype is fc2Error
+    assert dll.fc2FireSoftwareTrigger.argtypes == [fc2Context]
+    assert dll.fc2FireSoftwareTrigger.restype is fc2Error
+    assert dll.fc2FireSoftwareTriggerBroadcast.argtypes == [fc2Context]
+    assert dll.fc2FireSoftwareTriggerBroadcast.restype is fc2Error
 
 
 def test_camera_get_trigger_mode_info_and_mode() -> None:
@@ -195,6 +210,54 @@ def test_camera_get_trigger_mode_info_and_mode() -> None:
     assert info.supports_mode(0)
     assert mode.on_off is False
     assert mode.source == 0
+
+
+def test_flycapture2capi_fire_software_trigger_calls_sdk_function() -> None:
+    dll = _FakeDLL()
+    api = FlyCapture2CAPI()
+    api._dll = dll  # type: ignore[assignment]
+
+    api.fire_software_trigger(fc2Context())
+    api.fire_software_trigger(fc2Context(), broadcast=True)
+
+    assert "fc2FireSoftwareTrigger" in dll.functions
+    assert "fc2FireSoftwareTriggerBroadcast" in dll.functions
+
+
+def test_flycapture2capi_missing_software_trigger_symbol_raises_not_supported() -> None:
+    class MissingSoftwareTriggerDLL(_FakeDLL):
+        def __getattr__(self, name: str) -> _FakeFunction:
+            if name in {"fc2FireSoftwareTrigger", "fc2FireSoftwareTriggerBroadcast"}:
+                raise AttributeError(name)
+            return super().__getattr__(name)
+
+    api = FlyCapture2CAPI()
+    api._dll = MissingSoftwareTriggerDLL()  # type: ignore[assignment]
+
+    with pytest.raises(FlyCapture2NotSupportedError, match="fc2FireSoftwareTrigger"):
+        api.fire_software_trigger(fc2Context())
+    with pytest.raises(FlyCapture2NotSupportedError, match="fc2FireSoftwareTriggerBroadcast"):
+        api.fire_software_trigger(fc2Context(), broadcast=True)
+
+
+def test_camera_fire_software_trigger_with_fake_api() -> None:
+    api = TriggerFakeAPI()
+    camera = _open_camera(api)
+    try:
+        camera.fire_software_trigger()
+        camera.fire_software_trigger(broadcast=True)
+    finally:
+        camera.close()
+
+    assert api.fire_software_trigger_calls == 1
+    assert api.fire_software_trigger_broadcast_calls == 1
+
+
+def test_camera_fire_software_trigger_requires_open_camera() -> None:
+    camera = Camera(api=TriggerFakeAPI())
+
+    with pytest.raises(CameraStateError):
+        camera.fire_software_trigger()
 
 
 def test_camera_enable_trigger_validates_and_writes_mode() -> None:
