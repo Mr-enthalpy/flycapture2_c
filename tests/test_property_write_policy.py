@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from flycapture2_c.camera import Camera
 from flycapture2_c.ctypes_defs import fc2CameraInfo, fc2Image, fc2PGRGuid, fc2Property, fc2PropertyInfo
+from flycapture2_c._hardware_tools import restore_property_value
 from flycapture2_c.errors import (
     PropertyModeError,
     PropertyNotWritableError,
@@ -266,5 +267,21 @@ def test_raw_policy_remains_available_for_advanced_low_level_calls() -> None:
         assert api.last_written_property is not None
         assert api.last_written_property.type == int(PropertyType.BRIGHTNESS)
         assert api.last_written_property.valueA == 11
+    finally:
+        camera.close()
+
+
+def test_hardware_restore_helper_omits_unsupported_control_flags() -> None:
+    api = PropertyPolicyFakeAPI()
+    api._info_by_type[int(PropertyType.GAIN)].onOffSupported = 0
+    camera = _open_camera(api)
+    try:
+        current = camera.get_property(PropertyType.GAIN)
+        restored = restore_property_value(camera, PropertyType.GAIN, current)
+        assert restored.property_type == PropertyType.GAIN
+        assert api.set_property_calls == 1
+        assert api.last_written_property is not None
+        assert api.last_written_property.absControl == 1
+        assert api.last_written_property.absValue == current.abs_value
     finally:
         camera.close()

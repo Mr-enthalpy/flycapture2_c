@@ -6,9 +6,15 @@ configuration, the generic property system, embedded metadata, strobe/GPIO,
 software trigger firing, and GigE-specific camera controls. It does not claim
 full SDK coverage.
 
-Stage 6B GigE-specific controls are implemented. GPIO scope is limited to
+Stage 6.6 is release readiness and API hardening. GPIO scope is limited to
 direct C API pin-direction helpers plus metadata-level GPIO pin-state
 observation; no register-level GPIO control is wrapped.
+
+Top-level public exports are classified in `docs/public_api.md`. Stable
+ordinary use should go through `Camera`, `enumerate_cameras`, and the value
+dataclasses/enums returned by those methods. `flycapture2_c.raw` and
+`flycapture2_c.api.FlyCapture2CAPI` are advanced interfaces for ctypes-oriented
+callers.
 
 ## Raw binding infrastructure
 
@@ -190,4 +196,6 @@ Every wrapped FlyCapture2 return code is checked and converted into a typed Pyth
 - network service, packet streaming service, or discovery daemon
 - sidecar / IPC / shared memory / ZMQ
 - `optic_system` backend code
-- experiment automation or calibration workflows
+- LCD/projector synchronization
+- experiment automation, acquisition workflow orchestration, calibration
+  workflows, or reconstruction workflows

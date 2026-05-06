@@ -1,6 +1,6 @@
 # flycapture2_c
 
-`flycapture2_c` is a maintainable Python wrapper around the FlyCapture2 C API.
+`flycapture2_c` is a maintainable Python wrapper around the FlyCapture2 C SDK.
 It is intended to replace legacy `pyflycap2` / `PyCapture2` usage with a
 scriptable, non-GUI SDK wrapper.
 
@@ -24,6 +24,24 @@ Current capabilities:
 - mock camera support and default no-hardware tests
 - opt-in hardware smoke, JSON capability reporting, and deterministic hardware validation suites
 
+## Package Scope
+
+Current package version: `0.6.0`.
+
+Core runtime dependencies are intentionally limited to Python, `ctypes`, and
+NumPy. The package discovery configuration includes only modules under `src/`;
+vendor SDK DLLs and sample binaries are not bundled. Importing the package does
+not load the FlyCapture2 DLL, enumerate cameras, open hardware, or require an
+installed SDK.
+
+Public API boundaries are documented in [docs/public_api.md](docs/public_api.md):
+
+- stable high-level API: `Camera`, `enumerate_cameras`
+- value dataclasses and enums returned by high-level methods
+- typed high-level errors
+- advanced/raw interfaces under `flycapture2_c.raw` and `flycapture2_c.api`
+- compatibility test helpers: `MockCamera`, `open_mock_camera`
+
 ## Current Project Phase
 
 The current major non-GUI camera-control surfaces are implemented for the
@@ -32,15 +50,38 @@ Format7/ROI/pixel format, SDK capture config, properties, embedded metadata,
 diagnostics, strobe/GPIO, GigE controls, raw function specs, and hardware
 validation tooling.
 
-Active work is Stage 6.5: stabilization and hardware validation normalization
-on the available camera. Routine validation uses:
+Active work is Stage 6.6: release readiness and API hardening. This milestone
+audits public API boundaries, documentation, version metadata, packaging, and
+validation workflows without adding new SDK feature surface. Current hardware
+validation remains limited to the available camera. Broader camera-model and
+multi-camera validation is deferred until more hardware is available.
+
+Default no-hardware validation:
 
 ```powershell
+python -m pytest -q
+python -c "import flycapture2_c; print('ok')"
+```
+
+Readonly hardware validation:
+
+```powershell
+$env:FLYCAPTURE2_HARDWARE_TEST="1"
+$env:FLYCAPTURE2_CAMERA_INDEX="0"
 python scripts/hardware_capability_report.py --output outputs/capability_camera0.json
 python scripts/run_hardware_validation.py
 ```
 
-Broader camera-model validation is deferred until more hardware is available.
+Write-gated hardware validation is deliberate and may be skipped during normal
+development:
+
+```powershell
+$env:FLYCAPTURE2_HARDWARE_TEST="1"
+$env:FLYCAPTURE2_HARDWARE_WRITE_TEST="1"
+$env:FLYCAPTURE2_CAMERA_INDEX="0"
+python scripts/run_hardware_validation.py --include-write
+```
+
 The project remains a FlyCapture2 C SDK wrapper, not an experiment framework,
 camera server, GUI application, or acquisition workflow engine.
 
@@ -66,9 +107,11 @@ Project boundaries:
 - no GUI or preview UI
 - no sidecar process, IPC/shared memory, or ZMQ transport
 - no `optic_system` backend code
-- no experiment scheduling, network service, calibration workflow, or reconstruction pipeline
+- no LCD/projector synchronization
+- no experiment scheduling, acquisition workflow orchestration, network service,
+  calibration workflow, or reconstruction pipeline
 
 This repository currently carries the active FlyCapture2 wrapper, tests, docs,
 and hardware smoke tooling. A future distilled repository may be created from
-this work, but the current repository remains scoped to the FlyCapture2 C API
+this work, but the current repository remains scoped to the FlyCapture2 C SDK
 wrapper and its own validation tools.

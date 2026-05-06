@@ -3,18 +3,17 @@
 This roadmap describes the current implementation state. It is not a claim of
 full FlyCapture2 SDK coverage or broad camera-model compatibility.
 
-The active phase is Stage 6.5: active stabilization and hardware validation
-normalization. SDK feature expansion and broader multi-camera compatibility
-expansion are paused. Current hardware validation is limited to the physical
-camera that is available locally.
+The active phase is Stage 6.6: release readiness and API hardening. SDK feature
+expansion and broader multi-camera compatibility expansion are paused. Current
+hardware validation is limited to the physical camera that is available locally.
 
 ## Stage 0: Documentation and API Coverage
 
 Status: complete for the current project scope.
 
 - `docs/api_coverage.md` tracks currently wrapped functions.
-- `docs/api_mapping.md`, `docs/recipes.md`, `docs/hardware_testing.md`, and
-  migration notes exist and are maintained.
+- `docs/api_mapping.md`, `docs/public_api.md`, `docs/recipes.md`,
+  `docs/hardware_testing.md`, and migration notes exist and are maintained.
 - Documentation now distinguishes implemented wrapper surface, active
   stabilization work, and deferred SDK expansion.
 
@@ -33,7 +32,7 @@ The repository historically grew through top-level `ctypes_defs.py` and
 
 Stage 4.5 added the package skeleton and moved current function signatures into
 `raw/specs.py`. Broader raw SDK coverage remains future work. New SDK areas are
-not active during Stage 6.5.
+not active during Stage 6.6.
 
 ## Stage 2: Lifecycle and Acquisition
 
@@ -146,9 +145,9 @@ Implemented:
 
 ## Stage 6.5: Systematic Testing and Hardware Qualification
 
-Status: active.
+Status: complete for the current project stage.
 
-Stage 6.5 is active stabilization and hardware validation normalization.
+Stage 6.5 established stabilization and hardware validation normalization.
 
 Current priorities:
 
@@ -172,6 +171,36 @@ Hardware scope:
 - multi-camera and multi-model validation is deferred until additional hardware is available
 - do not write roadmap language that implies imminent validation across a camera fleet
 
+## Stage 6.6: Release Readiness And API Hardening
+
+Status: active.
+
+Stage 6.6 prepares the implemented wrapper surface for a stable internal
+release candidate without expanding SDK coverage.
+
+Current priorities:
+
+- classify the top-level public API and keep imports SDK-free
+- align version metadata, package discovery, and release notes
+- harden documentation around supported scope, validation workflows, and
+  compatibility boundaries
+- verify optional SDK symbols fail with typed not-supported errors when absent
+- keep default no-hardware tests passing without the vendor SDK or camera
+- run readonly hardware capability reporting and validation when the available
+  camera is connected
+
+Boundaries:
+
+- no new SDK feature surface
+- no register access, callbacks, events, or broader raw SDK expansion in this milestone
+- no GUI, preview UI, sidecar, IPC, shared memory, ZMQ, `optic_system`,
+  experiment scheduling, LCD/projector sync, calibration, reconstruction, or
+  acquisition workflow API
+- no task-level acquisition helpers or workflow runners
+
+Release readiness is not a claim of full FlyCapture2 SDK coverage or broad
+camera-model compatibility.
+
 ## Stage 7+: Future Expansion
 
 Future areas, not active milestones:
@@ -179,7 +208,7 @@ Future areas, not active milestones:
 - camera-local SDK primitives and broader raw FlyCapture2 C SDK coverage
 - register access as an advanced API
 - callbacks and events
-- release stabilization and migration documentation
+- future release stabilization after broader validation evidence exists
 - multi-camera and multi-model compatibility validation when hardware becomes available
 
 Deferred areas remain outside this project:

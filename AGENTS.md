@@ -30,11 +30,13 @@ The raw layer may grow toward near-complete SDK coverage. The high-level layer s
 
 ## Current phase
 
-The active project phase is Stage 6.5: stabilization and hardware validation
-normalization.
+The active project phase is Stage 6.6: release readiness and API hardening.
 
 Do not add new SDK feature surface unless explicitly requested. Prefer:
 
+- auditing public API boundaries
+- improving package metadata and version consistency
+- updating changelog and release documentation
 - fixing hardware-test failures
 - improving capability reports
 - updating documentation
@@ -543,12 +545,17 @@ Stage 5A embedded metadata and diagnostics
 Stage 5B strobe / GPIO
 Stage 6A software trigger firing
 Stage 6B GigE-specific controls
-Stage 7  broad raw SDK coverage
-Stage 8  migration documentation from pyflycap2 / PyCapture2
-Stage 9  release stabilization
+Stage 6.5 stabilization and hardware validation normalization
+Stage 6.6 release readiness and API hardening, current active phase
+Stage 7+ future SDK expansion only when explicitly re-scoped
 ```
 
 Prioritize APIs that remove GUI dependency from automated scripts.
+
+During Stage 6.6, SDK expansion is paused unless explicitly requested. Roadmap
+work should focus on release readiness, API consistency, packaging/version
+metadata, documentation, no-hardware regression coverage, and validation
+workflow clarity.
 
 Priority order:
 
@@ -642,14 +649,8 @@ Do not use broad automatic translation unless the generated output is reviewed a
 
 The wrapper is not responsible for GUI threading, shared memory, ZMQ, or experiment scheduling.
 
-Continuous acquisition may be exposed as:
-
-```python
-for frame in cam.frames(count=100):
-    ...
-```
-
-or through repeated `read_frame()` calls.
+Continuous acquisition should remain explicit repeated `read_frame()` calls
+unless a future milestone deliberately scopes a camera-local helper.
 
 Do not implement a background acquisition daemon unless explicitly requested.
 
@@ -755,7 +756,8 @@ Suggested version milestones:
 0.2.x  raw binding infrastructure, trigger, Format7, ROI, pixel format, capture config
 0.3.x  complete property system
 0.4.x  embedded metadata, strobe, GPIO, GigE basics
-0.5.x  broad raw SDK coverage and migration documentation
+0.5.x  software trigger, GigE controls, hardware validation tooling, migration documentation
+0.6.0  current Stage 6.6 release-readiness and API-hardening snapshot
 1.0.0  stable high-level API, documented migration path, tested hardware workflows
 ```
 
