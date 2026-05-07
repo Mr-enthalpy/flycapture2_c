@@ -2,7 +2,7 @@
 
 These examples use only the FlyCapture2 C SDK wrapper. They do not require any GUI path.
 
-Status note: Stage 6.7 is release candidate hardening and reproducibility.
+Status note: Stage 6.8 is hardware evidence and capture-rate validation.
 Strobe, GPIO, and GigE availability are camera-model-dependent and
 wiring-dependent. Current hardware validation evidence is limited to the
 available camera; broader camera-model validation is deferred.
@@ -46,6 +46,28 @@ print(len(frames))
 
 Looping remains caller-controlled. This package does not provide an acquisition
 workflow runner or experiment scheduler.
+
+## Measure Real-Time Capture FPS
+
+Use the capture-rate tool when validating host throughput. It uses existing
+`Camera` APIs only; it does not add SDK feature surface or an acquisition
+workflow API.
+
+```powershell
+$env:FLYCAPTURE2_SDK_DIR="D:\Program Files\Point Grey Research\FlyCapture2"
+$env:FLYCAPTURE2_DLL_DIR="D:\Program Files\Point Grey Research\FlyCapture2\bin64"
+$env:FLYCAPTURE2_HARDWARE_TEST="1"
+$env:FLYCAPTURE2_HARDWARE_WRITE_TEST="1"
+$env:FLYCAPTURE2_CAMERA_INDEX="0"
+
+python scripts/measure_capture_rate.py --duration 10 --warmup 10 --output outputs/capture_rate_baseline.json
+python scripts/measure_capture_rate.py --fps 5 10 15 24 30 40 --duration 10 --warmup 10 --output outputs/capture_rate_matrix.json
+```
+
+The script saves and restores trigger mode, frame-rate property, Format7 state
+when touched, and SDK capture configuration when touched. Trigger mode must be
+disabled for continuous free-running capture, so trigger-enabled cameras require
+`FLYCAPTURE2_HARDWARE_WRITE_TEST=1` for this validation.
 
 ## Fixed Shutter And Gain
 

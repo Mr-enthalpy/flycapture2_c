@@ -39,6 +39,12 @@ python scripts/hardware_capability_report.py --output outputs/capability_camera0
 python scripts/run_hardware_validation.py
 ```
 
+If the connected camera is currently trigger-enabled, free-running grab tests
+will not receive frames until trigger mode is disabled. For release evidence,
+save the original trigger, SDK configuration, and frame-rate property first;
+temporarily disable trigger and set an SDK grab timeout; then restore the saved
+state after validation.
+
 For release evidence, record the FlyCapture2 SDK version, camera model, serial
 number, interface type, OS version, Python version, validation command, and
 result summary. Capability report JSON should be written under `outputs/` and
@@ -70,6 +76,48 @@ a deterministic order. It runs readonly groups by default and forces
 `FLYCAPTURE2_HARDWARE_WRITE_TEST=0` for those groups even if the variable is set
 in the parent shell. Write-gated groups run only with `--include-write` and
 `FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
+
+Capture-rate validation:
+
+```powershell
+$env:FLYCAPTURE2_SDK_DIR="D:\Program Files\Point Grey Research\FlyCapture2"
+$env:FLYCAPTURE2_DLL_DIR="D:\Program Files\Point Grey Research\FlyCapture2\bin64"
+$env:FLYCAPTURE2_HARDWARE_TEST="1"
+$env:FLYCAPTURE2_CAMERA_INDEX="0"
+
+# Baseline using the current frame-rate readback. If trigger is enabled,
+# this requires write opt-in so the script can disable trigger and restore it.
+$env:FLYCAPTURE2_HARDWARE_WRITE_TEST="1"
+python scripts/measure_capture_rate.py --duration 10 --warmup 10 --output outputs/capture_rate_baseline_good_host.json
+
+# Configured FPS matrix. Unsupported requested FPS values are reported as
+# skipped/unsupported instead of failing the whole run.
+$env:FLYCAPTURE2_HARDWARE_WRITE_TEST="1"
+python scripts/measure_capture_rate.py --fps 5 10 15 24 30 40 --duration 10 --warmup 10 --output outputs/capture_rate_matrix_good_host.json
+```
+
+`scripts/measure_capture_rate.py` records requested FPS, SDK/readback FPS,
+actual wall-clock FPS, actual/readback ratio, frame count, elapsed seconds,
+shape, dtype, pixel format, video mode, Format7 settings, bytes/frame, MiB/s,
+interarrival statistics, timeout/stall/SDK errors, camera identity, FlyCapture2
+library version, OS, Python version, and host note.
+
+Host-limited FPS troubleshooting:
+
+- If `flycapture2_c` and `pyflycap2` both plateau at the same low FPS on one
+  host, classify the result as a host/driver/USB environment issue until a
+  same-host cross-check proves otherwise.
+- Confirm trigger mode is disabled for free-running capture. A trigger-enabled
+  camera will wait for triggers and can make readonly grab tests appear hung.
+- Prefer SDK grab timeout configuration with `Camera.set_grab_timeout(ms)` for
+  hardware validation; Python wall-clock guards are separate.
+- Record driver version, USB controller/port, cable/hub path, OS build, SDK
+  version, camera model, serial, pixel format, ROI, packet size, and measured
+  MiB/s before treating a throughput problem as a wrapper regression.
+- Move the same camera and cable to a known-good host before bisecting wrapper
+  code. Stage 6.8 evidence showed 5, 10, 24, 30, and 40 FPS all reached target
+  rates on the new host, while the old host reproduced the 5 FPS ceiling under
+  `pyflycap2`.
 
 Legacy smoke examples remain useful for narrower checks:
 

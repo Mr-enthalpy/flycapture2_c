@@ -1,6 +1,20 @@
 # Changelog
 
-## Unreleased - Stage 6.7 Release Candidate Hardening And Reproducibility
+## Unreleased - Stage 6.8 Good-Host Capture-Rate Evidence
+
+- Adds `scripts/measure_capture_rate.py`, a hardware validation tool that
+  measures real-time frame acquisition rate through the existing `Camera` API.
+- Adds opt-in hardware tests for capture-rate measurement and write-gated FPS
+  matrix validation.
+- Records good-host capture-rate evidence showing 5, 10, 15, 24, 30, and
+  40 FPS reach SDK readback rates on the new machine.
+- Documents host-limited FPS troubleshooting and the old-machine `pyflycap2`
+  cross-check that reproduced the 5 FPS ceiling outside this wrapper.
+
+This stage does not add FlyCapture2 SDK bindings, expand `Camera`, or add
+experiment orchestration.
+
+## Stage 6.7 Release Candidate Hardening And Reproducibility
 
 - Hardens release reproducibility checks for default no-hardware tests, import
   smoke, wheel/sdist builds, artifact audits, and clean venv installs from both
