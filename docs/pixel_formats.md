@@ -65,7 +65,18 @@ reinterpret unknown buffers as mono or RGB data.
 ## Capability Reports
 
 `scripts/hardware_capability_report.py` interprets Format7 and GigE
-pixel-format bitfields when they are available. The report separates:
+pixel-format bitfields when they are available. FlyCapture2 pixel-format
+constants include overlapping composite values, such as `BGR = 0x80000008`
+and `RGBU = 0x40000002`. A naive bitwise subset check would over-report
+formats such as `MONO8` or `YUV411` when only the composite value is present.
+
+Capability-report interpretation is therefore conservative. More-specific
+composite/modifier values are matched first, and overlapping one-hot base
+formats are suppressed when the integer bitfield cannot distinguish a true
+base-format flag from the composite value. This can under-report an ambiguous
+base+composite combination, but it avoids silently overstating camera support.
+
+The report separates:
 
 - `supported_by_camera`
 - `read_frame_decodable`

@@ -5,6 +5,7 @@ from flycapture2_c.pixel_format import (
     PIXEL_FORMAT_SUPPORT,
     PixelFormat,
     interpret_pixel_format_bitfield,
+    pixel_format_in_bitfield,
     support_for_pixel_format,
 )
 
@@ -73,12 +74,46 @@ def test_support_lookup_handles_aliases() -> None:
 
 
 def test_bitfield_interpretation_separates_supported_decode_and_raw_copy() -> None:
-    summary = interpret_pixel_format_bitfield(int(PixelFormat.MONO8) | int(PixelFormat.RGB8) | int(PixelFormat.BGR))
+    summary = interpret_pixel_format_bitfield(int(PixelFormat.MONO8) | int(PixelFormat.RGB8))
 
-    assert summary["supported_by_camera"] == ["MONO8", "RGB8", "BGR"]
+    assert summary["supported_by_camera"] == ["MONO8", "RGB8"]
     assert summary["read_frame_decodable"] == ["MONO8", "RGB8"]
-    assert summary["raw_copy_only"] == ["BGR"]
+    assert summary["raw_copy_only"] == []
     assert summary["unsupported_or_compressed"] == []
 
     compressed_summary = interpret_pixel_format_bitfield(int(PixelFormat.YUV422_JPEG))
     assert "YUV422_JPEG" in compressed_summary["unsupported_or_compressed"]
+
+
+def test_composite_bitfield_does_not_overreport_overlapping_base_format() -> None:
+    summary = interpret_pixel_format_bitfield(int(PixelFormat.BGR))
+
+    assert summary["supported_by_camera"] == ["BGR"]
+    assert "MONO8" not in summary["supported_by_camera"]
+    assert summary["read_frame_decodable"] == []
+    assert summary["raw_copy_only"] == ["BGR"]
+    assert summary["unsupported_or_compressed"] == []
+    assert pixel_format_in_bitfield(int(PixelFormat.BGR), PixelFormat.BGR) is True
+    assert pixel_format_in_bitfield(int(PixelFormat.BGR), PixelFormat.MONO8) is False
+
+
+def test_rgbu_bitfield_does_not_overreport_yuv411() -> None:
+    summary = interpret_pixel_format_bitfield(int(PixelFormat.RGBU))
+
+    assert summary["supported_by_camera"] == ["RGBU"]
+    assert "YUV411" not in summary["supported_by_camera"]
+    assert summary["read_frame_decodable"] == []
+    assert summary["raw_copy_only"] == ["RGBU"]
+    assert summary["unsupported_or_compressed"] == []
+    assert pixel_format_in_bitfield(int(PixelFormat.RGBU), PixelFormat.RGBU) is True
+    assert pixel_format_in_bitfield(int(PixelFormat.RGBU), PixelFormat.YUV411) is False
+
+
+def test_compressed_composite_bitfield_does_not_overreport_yuv411() -> None:
+    summary = interpret_pixel_format_bitfield(int(PixelFormat.YUV422_JPEG))
+
+    assert summary["supported_by_camera"] == ["YUV422_JPEG"]
+    assert "YUV411" not in summary["supported_by_camera"]
+    assert summary["read_frame_decodable"] == []
+    assert summary["raw_copy_only"] == []
+    assert summary["unsupported_or_compressed"] == ["YUV422_JPEG"]

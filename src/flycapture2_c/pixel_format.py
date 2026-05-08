@@ -131,6 +131,23 @@ SUPPORTED_PIXEL_FORMATS = DECODABLE_PIXEL_FORMATS
 CONFIGURABLE_PIXEL_FORMATS = frozenset(pixel_format for pixel_format in PixelFormat if pixel_format != PixelFormat.UNSPECIFIED)
 
 
+def _is_one_hot(value: int) -> bool:
+    return value > 0 and (value & (value - 1)) == 0
+
+
+def _specificity(value: int) -> int:
+    return bin(value).count("1")
+
+
+COMPOSITE_PIXEL_FORMATS = tuple(
+    sorted(
+        (pixel_format for pixel_format in PixelFormat if not _is_one_hot(int(pixel_format)) and pixel_format != PixelFormat.UNSPECIFIED),
+        key=lambda pixel_format: (_specificity(int(pixel_format)), int(pixel_format)),
+        reverse=True,
+    )
+)
+
+
 def from_sdk_value(value: int) -> PixelFormat:
     try:
         pixel_format = configurable_from_sdk_value(value)
@@ -204,10 +221,25 @@ def supported_formats_from_bitfield(bitfield: int) -> tuple[PixelFormat, ...]:
 
 def pixel_format_in_bitfield(bitfield: int, pixel_format: PixelFormat | str | int) -> bool:
     normalized = normalize_pixel_format(pixel_format)
+    bitfield_value = int(bitfield)
     value = int(normalized)
     if value == 0:
         return False
-    return (int(bitfield) & value) == value
+    if not _is_one_hot(value):
+        return (bitfield_value & value) == value
+
+    # FlyCapture2 defines some pixel formats with a base high bit plus modifier
+    # bits, for example BGR = 0x80000008 and RGBU = 0x40000002. If such a
+    # composite value is present in a bitfield, reporting the overlapping
+    # one-hot base format as supported would overstate camera capabilities. A
+    # true base+composite combination is indistinguishable in the integer
+    # bitfield, so the conservative choice is to let the specific composite
+    # value win and suppress the overlapping base format.
+    for composite in COMPOSITE_PIXEL_FORMATS:
+        composite_value = int(composite)
+        if (composite_value & value) == value and (bitfield_value & composite_value) == composite_value:
+            return False
+    return (bitfield_value & value) == value
 
 
 def interpret_pixel_format_bitfield(bitfield: int) -> dict[str, list[str]]:
