@@ -55,6 +55,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--save-frame", type=Path, default=None, help="save captured frame as .npy")
     parser.add_argument("--save-sequence-dir", type=Path, default=None, help="save captured sequence as .npy frames")
     parser.add_argument("--quiet", action="store_true", help="suppress human-readable console summary")
+    parser.add_argument("--show-lifecycle", action="store_true", help="print Camera lifecycle state at each step")
     return parser.parse_args()
 
 
@@ -171,6 +172,14 @@ def main() -> int:
             exit_code = 1
             return exit_code
 
+        if args.show_lifecycle:
+            emit(
+                f"lifecycle: opened={camera.is_open} "
+                f"capturing={camera.is_capturing} "
+                f"cleanup_errors={len(camera.cleanup_errors)}",
+                quiet=args.quiet,
+            )
+
         readonly = collect_readonly_summary(camera, camera_count=len(cameras))
         report.camera_info = camera_info_to_dict(readonly.camera_info)
         report.video_mode = readonly.video_mode
@@ -187,6 +196,12 @@ def main() -> int:
                 add_error(report, ErrorCategory.START_CAPTURE_FAILED, str(exc), exception=exc)
                 exit_code = 1
                 return exit_code
+            if args.show_lifecycle:
+                emit(
+                    f"lifecycle: opened={camera.is_open} "
+                    f"capturing={camera.is_capturing}",
+                    quiet=args.quiet,
+                )
             try:
                 frame, elapsed_ms = read_frame_checked(camera, timeout_ms=config.capture_timeout_ms)
                 summary = frame_summary_from_frame(frame, elapsed_ms=elapsed_ms)
@@ -202,6 +217,12 @@ def main() -> int:
                 except Exception as exc:
                     add_error(report, ErrorCategory.STOP_CAPTURE_FAILED, str(exc), exception=exc)
                     exit_code = 1
+                if args.show_lifecycle:
+                    emit(
+                        f"lifecycle: stop_called capturing={camera.is_capturing} "
+                        f"cleanup_errors={len(camera.cleanup_errors)}",
+                        quiet=args.quiet,
+                    )
             return exit_code
 
         if args.level == "grab-sequence":
@@ -211,6 +232,12 @@ def main() -> int:
                 add_error(report, ErrorCategory.START_CAPTURE_FAILED, str(exc), exception=exc)
                 exit_code = 1
                 return exit_code
+            if args.show_lifecycle:
+                emit(
+                    f"lifecycle: opened={camera.is_open} "
+                    f"capturing={camera.is_capturing}",
+                    quiet=args.quiet,
+                )
             try:
                 result = read_short_sequence(
                     camera,
@@ -235,6 +262,12 @@ def main() -> int:
                 except Exception as exc:
                     add_error(report, ErrorCategory.STOP_CAPTURE_FAILED, str(exc), exception=exc)
                     exit_code = 1
+                if args.show_lifecycle:
+                    emit(
+                        f"lifecycle: stop_called capturing={camera.is_capturing} "
+                        f"cleanup_errors={len(camera.cleanup_errors)}",
+                        quiet=args.quiet,
+                    )
             return exit_code
 
         if args.level == "write-property":
@@ -260,6 +293,13 @@ def main() -> int:
             except Exception as exc:
                 add_error(report, ErrorCategory.STOP_CAPTURE_FAILED, str(exc), exception=exc)
                 exit_code = 1
+            if args.show_lifecycle:
+                emit(
+                    f"lifecycle: close_called opened={camera.is_open} "
+                    f"capturing={camera.is_capturing} "
+                    f"cleanup_errors={len(camera.cleanup_errors)}",
+                    quiet=args.quiet,
+                )
         populate_sdk_metadata(report)
         finalize_report(report, report_json=args.report_json)
         emit(format_human_report(report), quiet=args.quiet)

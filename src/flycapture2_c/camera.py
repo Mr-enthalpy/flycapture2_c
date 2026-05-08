@@ -155,6 +155,7 @@ class Camera:
         self._descriptor: CameraDescriptor | None = None
         self._camera_info: CameraInfo | None = None
         self._last_frame: ImageFrame | None = None
+        self._cleanup_errors: list[FlyCapture2Error] = []
 
     @classmethod
     def open(cls, index: int = 0, api: FlyCapture2CAPI | None = None) -> "Camera":
@@ -169,6 +170,10 @@ class Camera:
     @property
     def is_capturing(self) -> bool:
         return self._capturing
+
+    @property
+    def cleanup_errors(self) -> tuple[FlyCapture2Error, ...]:
+        return tuple(self._cleanup_errors)
 
     @property
     def descriptor(self) -> CameraDescriptor | None:
@@ -220,10 +225,24 @@ class Camera:
         self._capturing = True
 
     def stop(self) -> None:
-        if not self._context or not self._connected or not self._capturing:
-            self._capturing = False
+        """Stop capture if the camera is capturing.
+
+        Idempotent: a no-op when the camera is not capturing, not connected, or
+        has no context.
+
+        Explicit ``stop()`` propagates real SDK errors. Known already-stopped
+        conditions (``ISOCH_NOT_STARTED``, ``NOT_CONNECTED``) are suppressed
+        since they do not indicate a problem.
+        """
+        if not self._capturing or not self._connected or self._context is None:
             return
-        self._suppress_cleanup(self._api.stop_capture, self._context)
+        try:
+            self._api.stop_capture(self._context)
+        except FlyCapture2Error as exc:
+            if exc.code in {FC2ErrorCode.ISOCH_NOT_STARTED, FC2ErrorCode.NOT_CONNECTED}:
+                self._capturing = False
+                return
+            raise
         self._capturing = False
 
     def read_frame(self) -> FrameArray:
@@ -1163,19 +1182,54 @@ class Camera:
             prop.absValue = float(abs_value)
 
     def close(self) -> None:
+        """Best-effort cleanup: release all SDK resources.
+
+        Idempotent — safe to call multiple times.
+
+        Each cleanup step (stop, disconnect, destroy-image, destroy-context)
+        runs independently. A failure in one step never prevents later steps
+        from executing.  Errors are collected in ``self.cleanup_errors``.
+
+        When called from a ``with Camera.open()`` context-manager exit, cleanup
+        errors never replace the active exception.
+        """
         if self._closed:
             return
 
-        self.stop()
+        self._cleanup_errors.clear()
+
+        # Step 1: best-effort stop (only when camera believes it is capturing)
+        if self._capturing and self._connected and self._context is not None:
+            try:
+                self._api.stop_capture(self._context)
+            except FlyCapture2Error as exc:
+                self._cleanup_errors.append(exc)
+            self._capturing = False
+
+        # Step 2: disconnect (even if stop failed)
         if self._context is not None and self._connected:
-            self._suppress_cleanup(self._api.disconnect, self._context)
+            try:
+                self._api.disconnect(self._context)
+            except FlyCapture2Error as exc:
+                self._cleanup_errors.append(exc)
             self._connected = False
+
+        # Step 3: destroy image (even if disconnect failed)
         if self._image is not None:
-            self._suppress_cleanup(self._api.destroy_image, self._image)
+            try:
+                self._api.destroy_image(self._image)
+            except FlyCapture2Error as exc:
+                self._cleanup_errors.append(exc)
             self._image = None
+
+        # Step 4: destroy context (even if previous steps failed)
         if self._context is not None:
-            self._suppress_cleanup(self._api.destroy_context, self._context)
+            try:
+                self._api.destroy_context(self._context)
+            except FlyCapture2Error as exc:
+                self._cleanup_errors.append(exc)
             self._context = None
+
         self._camera_info = None
         self._closed = True
 
@@ -1200,4 +1254,7 @@ class Camera:
         return self
 
     def __exit__(self, exc_type, exc, tb) -> None:
-        self.close()
+        try:
+            self.close()
+        except Exception:
+            pass
