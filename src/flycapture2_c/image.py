@@ -8,7 +8,7 @@ import numpy as np
 from .ctypes_defs import fc2Image, fc2TimeStamp
 from .errors import FlyCapture2Error
 from .metadata import ImageMetadata
-from .pixel_format import PixelFormat, bytes_per_pixel, from_sdk_value, numpy_dtype
+from .pixel_format import PixelFormat, bytes_per_pixel, channel_count, from_sdk_value, numpy_dtype
 from .typing import FrameArray
 
 
@@ -38,6 +38,7 @@ def image_to_frame(
     width = int(image.cols)
     stride = int(image.stride)
     bytes_per_px = bytes_per_pixel(pixel_format)
+    channels = channel_count(pixel_format)
     row_bytes = width * bytes_per_px
     expected_bytes = height * stride
     available_bytes = int(image.receivedDataSize) or int(image.dataSize)
@@ -49,8 +50,10 @@ def image_to_frame(
     raw_matrix = np.frombuffer(raw_bytes, dtype=np.uint8, count=expected_bytes).reshape(height, stride)
     payload = raw_matrix[:, :row_bytes].copy()
     dtype = numpy_dtype(pixel_format)
-    if bytes_per_px == 1:
+    if channels == 1 and bytes_per_px == 1:
         array = np.array(payload.reshape(height, width), dtype=dtype, copy=True)
+    elif channels == 3 and dtype == np.dtype(np.uint8):
+        array = np.array(payload.reshape(height, width, channels), dtype=dtype, copy=True)
     else:
         array = np.array(payload.view(dtype).reshape(height, width), dtype=dtype, copy=True)
     return ImageFrame(

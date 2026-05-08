@@ -69,6 +69,25 @@ with Camera.open(0) as cam:
     frame = cam.read_frame()
 ```
 
+Configure an RGB pixel format when the camera reports support:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_pixel_format("RGB")
+    cam.disable_trigger()
+    cam.start()
+    frame = cam.read_frame_with_info()
+    assert frame.array.ndim == 3
+    assert frame.array.shape[2] == 3
+    assert frame.array.dtype.name == "uint8"
+```
+
+Pixel-format configuration support and `read_frame()` decode support are
+separate. See [docs/pixel_formats.md](docs/pixel_formats.md) for the current
+support matrix. Full pixel-format decoding is not complete.
+
 ## Common Diagnostics
 
 - `SDKNotFoundError`: set `FLYCAPTURE2_SDK_DIR` or install the FlyCapture2 SDK.
@@ -91,6 +110,8 @@ Current capabilities:
 - hardware trigger mode configuration without GUI
 - software trigger firing without GUI
 - Format7, ROI, and camera pixel-format configuration
+- explicit pixel-format support matrix, including RGB8/RGB decode to owned
+  `(height, width, 3)` `uint8` arrays
 - SDK capture configuration, including grab timeout and grab mode
 - generic FlyCapture2 property inspection and safe property writing
 - embedded image metadata inspection/configuration and frame metadata readback
@@ -128,12 +149,13 @@ Format7/ROI/pixel format, SDK capture config, properties, embedded metadata,
 diagnostics, strobe/GPIO, GigE controls, raw function specs, and hardware
 validation tooling.
 
-Active work is Stage 6.7: release candidate hardening and reproducibility. This
-milestone audits public API boundaries, documentation, version metadata,
-packaging, clean installs, artifact contents, and no-hardware CI reproducibility
-without adding new SDK feature surface. Current hardware validation remains
-limited to the available camera. Broader camera-model and multi-camera
-validation is deferred until more hardware is available.
+Active work is Stage 6.9: Pixel Format Support Matrix and RGB Decode. This
+milestone makes pixel-format support explicit and adds conservative RGB8/RGB
+frame decode without adding new SDK bindings or a full image conversion
+subsystem. Stage 6.8 good-host capture-rate evidence remains part of the
+current `master` history. Current hardware validation remains limited to the
+available camera. Broader camera-model and multi-camera validation is deferred
+until more hardware is available.
 
 Default no-hardware validation:
 

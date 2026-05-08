@@ -4,7 +4,13 @@ from dataclasses import dataclass
 
 from .ctypes_defs import fc2Format7ImageSettings, fc2Format7Info, fc2Format7PacketInfo
 from .errors import UnsupportedFormat7Error, UnsupportedPixelFormatError
-from .pixel_format import CONFIGURABLE_PIXEL_FORMATS, PixelFormat, configurable_from_sdk_value, normalize_pixel_format
+from .pixel_format import (
+    CONFIGURABLE_PIXEL_FORMATS,
+    PixelFormat,
+    configurable_from_sdk_value,
+    normalize_pixel_format,
+    pixel_format_in_bitfield,
+)
 
 PREFERRED_DECODABLE_PIXEL_FORMATS = (
     PixelFormat.MONO8,
@@ -91,7 +97,7 @@ class Format7Info:
 
     def supports_pixel_format(self, pixel_format: PixelFormat | str | int) -> bool:
         normalized = normalize_pixel_format(pixel_format)
-        return bool(self.pixel_format_bit_field & int(normalized))
+        return pixel_format_in_bitfield(self.pixel_format_bit_field, normalized)
 
 
 @dataclass(frozen=True)

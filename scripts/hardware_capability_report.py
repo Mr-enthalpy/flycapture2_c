@@ -107,11 +107,21 @@ def collect_property_capabilities(camera) -> list[dict[str, Any]]:
 def collect_format7_capabilities(camera) -> dict[str, Any]:
     modes: list[dict[str, Any]] = []
     for mode in range(5):
-        modes.append({"mode": mode, "info": probe(lambda mode=mode: camera.get_format7_info(mode=mode))})
+        info_result = probe(lambda mode=mode: camera.get_format7_info(mode=mode))
+        item: dict[str, Any] = {"mode": mode, "info": info_result}
+        if info_result["status"] == "ok":
+            item["pixel_formats"] = pixel_format_summary_from_bitfield(info_result["value"]["pixel_format_bit_field"])
+        modes.append(item)
     return {
         "modes": modes,
         "current_configuration": probe(camera.get_format7_configuration),
     }
+
+
+def pixel_format_summary_from_bitfield(bitfield: int) -> dict[str, list[str]]:
+    from flycapture2_c.pixel_format import interpret_pixel_format_bitfield
+
+    return interpret_pixel_format_bitfield(int(bitfield))
 
 
 def collect_strobe_capabilities(camera) -> list[dict[str, Any]]:
@@ -145,19 +155,25 @@ def collect_gige_capabilities(camera) -> dict[str, Any]:
                 {"channel": channel, "info": probe(lambda channel=channel: camera.get_gige_stream_channel_info(channel))}
             )
 
-    return {
+    image_settings_info = probe(camera.get_gige_image_settings_info)
+    result = {
         "config": probe(camera.get_gige_config),
         "properties": [
             {"property_type": property_type.name, "value": probe(lambda property_type=property_type: camera.get_gige_property(property_type))}
             for property_type in GigEPropertyType
         ],
         "imaging_mode": probe(camera.get_gige_imaging_mode),
-        "image_settings_info": probe(camera.get_gige_image_settings_info),
+        "image_settings_info": image_settings_info,
         "image_settings": probe(camera.get_gige_image_settings),
         "binning_settings": probe(camera.get_gige_image_binning_settings),
         "stream_channel_count": channel_count_result,
         "stream_channels": stream_channels,
     }
+    if image_settings_info["status"] == "ok":
+        result["pixel_formats"] = pixel_format_summary_from_bitfield(
+            image_settings_info["value"]["pixel_format_bit_field"]
+        )
+    return result
 
 
 def collect_capability_report(camera_index: int) -> dict[str, Any]:

@@ -3,8 +3,9 @@
 This roadmap describes the current implementation state. It is not a claim of
 full FlyCapture2 SDK coverage or broad camera-model compatibility.
 
-The active phase is Stage 6.8: good-host hardware evidence and capture-rate
-validation. SDK feature expansion and broader multi-camera compatibility
+The active focused milestone is Stage 6.9: Pixel Format Support Matrix and RGB
+Decode. Stage 6.8 good-host capture-rate evidence remains part of the current
+`master` history. SDK feature expansion and broader multi-camera compatibility
 expansion are paused. Current hardware validation is limited to the physical
 camera that is available locally.
 
@@ -258,6 +259,34 @@ Boundaries:
 
 The Stage 6.8 capture-rate tool is release evidence and reproducibility
 infrastructure, not SDK feature expansion.
+
+## Stage 6.9: Pixel Format Support Matrix and RGB Decode
+
+Status: active focused hardening milestone.
+
+Stage 6.9 keeps version `0.6.0` and makes pixel-format support explicit without
+turning the wrapper into a full image conversion subsystem.
+
+Current priorities:
+
+- make pixel-format support explicit across SDK enum knowledge,
+  camera-configurable candidates, `read_frame()` decode support, raw-copy-only
+  formats, and unsupported/compressed formats
+- decode the confirmed FlyCapture2 `RGB8`/`RGB` 24-bit interleaved format into
+  owned `(height, width, 3)` `uint8` NumPy arrays
+- preserve explicit `UnsupportedPixelFormatError` for known-but-undecoded
+  formats and unknown SDK pixel-format values
+- keep Format7 and GigE pixel-format bitfield interpretation conservative
+  because FlyCapture2 pixel-format values can overlap
+
+Boundaries:
+
+- no new SDK bindings
+- no high-level `Camera` feature expansion beyond existing pixel-format
+  configuration and frame-read primitives
+- no Bayer demosaic, YUV conversion, compressed decoding, color management,
+  GUI, preview UI, sidecar, shared memory, ZMQ, IPC, `optic_system`,
+  experiment orchestration, calibration, or reconstruction
 
 ## Stage 7+: Future Expansion
 
