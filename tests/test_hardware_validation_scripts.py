@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from scripts import hardware_capability_report, run_hardware_validation
+from flycapture2_c.pixel_format import PixelFormat
 
 
 def test_capability_report_refuses_without_hardware_opt_in(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -65,6 +66,20 @@ def test_capability_report_output_is_valid_json(tmp_path: Path, capsys: pytest.C
     file_payload = json.loads(output.read_text(encoding="utf-8"))
     assert stdout_payload == file_payload
     assert stdout_payload["capabilities"]["lifecycle"]["value"]["opened"] is True
+
+
+def test_capability_report_pixel_format_bitfield_summary() -> None:
+    summary = hardware_capability_report.pixel_format_summary_from_bitfield(
+        int(PixelFormat.MONO8) | int(PixelFormat.RGB8) | int(PixelFormat.BGR)
+    )
+
+    assert summary["supported_by_camera"] == ["MONO8", "RGB8", "BGR"]
+    assert summary["read_frame_decodable"] == ["MONO8", "RGB8"]
+    assert summary["raw_copy_only"] == ["BGR"]
+    assert summary["unsupported_or_compressed"] == []
+
+    compressed_summary = hardware_capability_report.pixel_format_summary_from_bitfield(int(PixelFormat.YUV422_JPEG))
+    assert "YUV422_JPEG" in compressed_summary["unsupported_or_compressed"]
 
 
 def test_hardware_validation_runner_builds_expected_readonly_commands() -> None:

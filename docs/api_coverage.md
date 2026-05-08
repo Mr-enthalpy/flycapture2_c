@@ -2,8 +2,8 @@
 
 This table tracks the FlyCapture2 C API surface wrapped by this project. The
 current wrapped SDK surface is broad but not complete. Stage 6.7 is focused on
-release candidate hardening and reproducibility of the existing wrapper, not new
-SDK feature surface.
+release candidate hardening, reproducibility, and explicit pixel-format decode
+classification for the existing wrapper, not broad new SDK feature surface.
 
 Deferred areas include register access, callbacks/events, and broader raw SDK
 coverage. Multi-camera compatibility evidence is limited to the currently
@@ -14,7 +14,7 @@ broad hardware compatibility.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Raw infrastructure | current wrapped function signatures | `FunctionSpec` registry | `raw/specs.py` introduced | used by existing `FlyCapture2CAPI` binding path | covered | not-applicable | not-applicable | Stage 4.5 bridge; checked calls still live in top-level `api.py` for compatibility. |
 | Public API | top-level package exports | dataclasses, enums, errors, and lazy imports | not-applicable | classified in `docs/public_api.md` | covered by SDK-free import test and frozen `0.6.x` public API drift test | not-applicable | not-applicable | Stage 6.7 release hardening; no public method renames or SDK feature expansion. |
-| Validation tooling | current wrapped capability surface | existing high-level wrappers | not-applicable | scripts only | covered by no-hardware script tests, clean artifact install smoke, and `scripts/check_release.py` | `scripts/hardware_capability_report.py` and `scripts/run_hardware_validation.py` | write groups require `--include-write` and `FLYCAPTURE2_HARDWARE_WRITE_TEST=1` | No new SDK function surface; diagnostic and pytest orchestration only. |
+| Validation tooling | current wrapped capability surface | existing high-level wrappers | not-applicable | scripts only | covered by no-hardware script tests, clean artifact install smoke, and `scripts/check_release.py` | `scripts/hardware_capability_report.py` and `scripts/run_hardware_validation.py` | write groups require `--include-write` and `FLYCAPTURE2_HARDWARE_WRITE_TEST=1` | No new SDK function surface; diagnostic and pytest orchestration only. Capability reports include pixel-format support matrix interpretation when SDK bitfields are available. |
 | Context | `fc2CreateContext` | `fc2Context` | raw-bound | internal lifecycle | covered | covered through opt-in enumerate/open tests | not-applicable | Lazy loaded. |
 | Context | `fc2DestroyContext` | `fc2Context` | raw-bound | internal lifecycle | covered | covered through opt-in enumerate/open tests | not-applicable | Cleanup path. |
 | Bus | `fc2GetNumOfCameras` | `fc2Context` | raw-bound | `enumerate_cameras`, `Camera.open` | covered | covered | not-applicable | Hardware tests remain opt-in. |
@@ -26,8 +26,8 @@ broad hardware compatibility.
 | Capture | `fc2StartCapture` | `fc2Context` | raw-bound | `Camera.start` | covered with mock/fake API | covered | not-applicable | No default hardware access. |
 | Capture | `fc2RetrieveBuffer` | `fc2Image` | raw-bound | `Camera.read_frame`, `Camera.read_frame_with_info` | covered with mock/image tests | covered | not-applicable | Public array is owned NumPy memory. |
 | Capture | `fc2StopCapture` | `fc2Context` | raw-bound | `Camera.stop` | covered with mock/fake API | covered | not-applicable | Idempotent high-level cleanup. |
-| Image | `fc2GetImageDimensions` | `fc2Image` | raw-bound | internal frame conversion | covered | covered through opt-in capture tests | not-applicable | Supports initial mono/raw formats. |
-| Image | `fc2GetImageData` | `fc2Image` | raw-bound | internal frame copy | covered | covered through opt-in capture tests | not-applicable | Does not expose SDK pointer. |
+| Image | `fc2GetImageDimensions` | `fc2Image` | raw-bound | internal frame conversion | covered | covered through opt-in capture tests | not-applicable | Decode support is explicit for `MONO8`, `MONO16`, `RAW8`, `RAW16`, and `RGB8`/`RGB`; other known formats fail explicitly. |
+| Image | `fc2GetImageData` | `fc2Image` | raw-bound | internal frame copy | covered | covered through opt-in capture tests | not-applicable | Copies SDK-owned data into owned NumPy arrays and respects row stride, including padded RGB8 rows. |
 | Image | `fc2GetImageMetadata` | `fc2ImageMetadata` | raw-bound | `ImageFrame.metadata` via `Camera.read_frame_with_info` | covered | covered through opt-in grab-one and metadata tests | not-applicable | Metadata values are copied into `ImageMetadata`; support depends on enabled embedded fields. |
 | Metadata | `fc2GetEmbeddedImageInfo` | `fc2EmbeddedImageInfo` | raw-bound | `Camera.get_embedded_image_info` | covered | covered by opt-in metadata readonly test | used by opt-in reversible metadata write test | Exposes availability and enabled state for each embedded field. |
 | Metadata | `fc2SetEmbeddedImageInfo` | `fc2EmbeddedImageInfo` | raw-bound | `Camera.set_embedded_image_info` | covered | not-applicable | covered by opt-in reversible metadata write test | High-level API rejects explicit writes to unavailable fields. |

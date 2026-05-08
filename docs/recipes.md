@@ -201,14 +201,18 @@ with Camera.open(0) as cam:
     frame = cam.read_frame()
 ```
 
-`read_frame()` currently decodes copied NumPy arrays for `MONO8`, `MONO16`, `RAW8`, and `RAW16`. Other SDK pixel formats may be configurable, but frame retrieval will raise `UnsupportedPixelFormatError` until an explicit decode or raw-frame path is implemented.
+`read_frame()` currently decodes copied NumPy arrays for `MONO8`, `MONO16`,
+`RAW8`, `RAW16`, and 24-bit interleaved `RGB8`/`RGB`. Other SDK pixel formats
+may be configurable, but frame retrieval will raise `UnsupportedPixelFormatError`
+until an explicit decode or raw-frame path is implemented. See
+`docs/pixel_formats.md` for the support matrix.
 
-## Configure MONO8, MONO16, RAW8, Or RAW16
+## Configure MONO8, MONO16, RAW8, RAW16, Or RGB
 
 ```python
 from flycapture2_c import Camera
 
-for pixel_format in ("MONO8", "MONO16", "RAW8", "RAW16"):
+for pixel_format in ("MONO8", "MONO16", "RAW8", "RAW16", "RGB"):
     with Camera.open(0) as cam:
         cam.set_pixel_format(pixel_format)
         cam.start()
@@ -219,6 +223,25 @@ for pixel_format in ("MONO8", "MONO16", "RAW8", "RAW16"):
 Pixel-format support is camera-mode-dependent. For production scripts, validate
 Format7 settings and restore the original configuration when changing camera
 state.
+
+## Capture RGB Frames
+
+Use RGB only when the connected camera reports the pixel format as supported for
+the selected Format7 or GigE image settings. Configuration support and
+`read_frame()` decode support are separate checks.
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.disable_trigger()
+    cam.set_pixel_format("RGB")
+    cam.start()
+    frame = cam.read_frame_with_info()
+    assert frame.array.ndim == 3
+    assert frame.array.shape[2] == 3
+    assert frame.array.dtype.name == "uint8"
+```
 
 ## Validate Format7 Before Writing
 

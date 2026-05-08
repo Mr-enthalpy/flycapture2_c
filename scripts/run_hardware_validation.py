@@ -25,6 +25,7 @@ READONLY_GROUPS: tuple[PytestGroup, ...] = (
     PytestGroup("grab-one / grab-sequence", ("tests/hardware/test_hardware_grab_one.py", "tests/hardware/test_hardware_grab_short_sequence.py")),
     PytestGroup("trigger readonly", ("tests/hardware/test_hardware_trigger_readonly.py",)),
     PytestGroup("Format7 readonly", ("tests/hardware/test_hardware_format7_readonly.py",)),
+    PytestGroup("pixel format matrix readonly", ("tests/hardware/test_hardware_pixel_format_matrix.py",)),
     PytestGroup("property readonly", ("tests/hardware/test_hardware_properties_readonly.py",)),
     PytestGroup("metadata readonly", ("tests/hardware/test_hardware_metadata_readonly.py",)),
     PytestGroup("strobe/GPIO readonly", ("tests/hardware/test_hardware_strobe_gpio_readonly.py",)),

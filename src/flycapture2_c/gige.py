@@ -9,6 +9,7 @@ from .pixel_format import (
     PixelFormat,
     configurable_from_sdk_value,
     normalize_pixel_format,
+    pixel_format_in_bitfield,
 )
 from .raw.structs import (
     fc2GigEConfig,
@@ -166,7 +167,7 @@ class GigEImageSettingsInfo:
 
     def supports_pixel_format(self, pixel_format: PixelFormat | str | int) -> bool:
         normalized = normalize_pixel_format(pixel_format)
-        return bool(self.pixel_format_bit_field & int(normalized))
+        return pixel_format_in_bitfield(self.pixel_format_bit_field, normalized)
 
 
 @dataclass(frozen=True)

@@ -6,9 +6,10 @@ configuration, the generic property system, embedded metadata, strobe/GPIO,
 software trigger firing, and GigE-specific camera controls. It does not claim
 full SDK coverage.
 
-Stage 6.6 is release readiness and API hardening. GPIO scope is limited to
-direct C API pin-direction helpers plus metadata-level GPIO pin-state
-observation; no register-level GPIO control is wrapped.
+Stage 6.7 is release readiness, reproducibility, and explicit pixel-format
+decode classification. GPIO scope is limited to direct C API pin-direction
+helpers plus metadata-level GPIO pin-state observation; no register-level GPIO
+control is wrapped.
 
 Top-level public exports are classified in `docs/public_api.md`. Stable
 ordinary use should go through `Camera`, `enumerate_cameras`, and the value
@@ -51,6 +52,12 @@ callers.
 `Camera.read_frame()` still returns only the owned NumPy array. Use
 `Camera.read_frame_with_info()` when timestamp and embedded frame metadata are
 needed.
+
+Pixel-format decode support is intentionally narrower than SDK enum knowledge
+and camera-side configuration support. The current structured decoder covers
+`MONO8`, `MONO16`, `RAW8`, `RAW16`, and 24-bit interleaved `RGB8`/`RGB`.
+Other known formats continue to raise `UnsupportedPixelFormatError` unless a
+future milestone adds an explicit decoder. See `docs/pixel_formats.md`.
 
 ## Properties
 
@@ -113,6 +120,8 @@ triggers, or coordinate external devices.
 
 High-level ROI is camera-side Format7 configuration, not Python-side image cropping.
 `PixelFormat` distinguishes SDK-configurable formats from formats that `read_frame()` can currently decode.
+`flycapture2_c.pixel_format.PIXEL_FORMAT_SUPPORT` records the machine-readable
+support matrix used by tests and capability reports.
 
 ## SDK Capture Configuration
 

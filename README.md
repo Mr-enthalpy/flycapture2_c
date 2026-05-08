@@ -69,6 +69,25 @@ with Camera.open(0) as cam:
     frame = cam.read_frame()
 ```
 
+Configure an RGB pixel format when the camera reports support:
+
+```python
+from flycapture2_c import Camera
+
+with Camera.open(0) as cam:
+    cam.set_pixel_format("RGB")
+    cam.disable_trigger()
+    cam.start()
+    frame = cam.read_frame_with_info()
+    assert frame.array.ndim == 3
+    assert frame.array.shape[2] == 3
+    assert frame.array.dtype.name == "uint8"
+```
+
+Pixel-format configuration support and `read_frame()` decode support are
+separate. See [docs/pixel_formats.md](docs/pixel_formats.md) for the current
+support matrix. Full pixel-format decoding is not complete.
+
 ## Common Diagnostics
 
 - `SDKNotFoundError`: set `FLYCAPTURE2_SDK_DIR` or install the FlyCapture2 SDK.
@@ -91,6 +110,8 @@ Current capabilities:
 - hardware trigger mode configuration without GUI
 - software trigger firing without GUI
 - Format7, ROI, and camera pixel-format configuration
+- explicit pixel-format support matrix, including RGB8/RGB decode to owned
+  `(height, width, 3)` `uint8` arrays
 - SDK capture configuration, including grab timeout and grab mode
 - generic FlyCapture2 property inspection and safe property writing
 - embedded image metadata inspection/configuration and frame metadata readback

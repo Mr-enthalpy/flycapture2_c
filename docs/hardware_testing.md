@@ -70,6 +70,9 @@ exercise real SDK write paths.
 `scripts/hardware_capability_report.py` opens one camera, reads current
 capabilities, records unsupported areas as JSON entries, and never writes
 camera state. It prints JSON to stdout and also writes `--output` when supplied.
+When Format7 or GigE pixel-format bitfields are available, the report separates
+camera-supported formats from `read_frame()`-decodable, raw-copy-only, and
+unsupported/compressed formats.
 
 `scripts/run_hardware_validation.py` runs the existing pytest hardware files in
 a deterministic order. It runs readonly groups by default and forces
@@ -146,6 +149,7 @@ Format7 / ROI / SDK configuration hardware tests:
 ```powershell
 $env:FLYCAPTURE2_HARDWARE_TEST="1"
 python -m pytest tests/hardware/test_hardware_format7_readonly.py
+python -m pytest tests/hardware/test_hardware_pixel_format_matrix.py
 
 $env:FLYCAPTURE2_HARDWARE_TEST="1"
 $env:FLYCAPTURE2_HARDWARE_WRITE_TEST="1"
