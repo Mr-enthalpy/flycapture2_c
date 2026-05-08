@@ -3,10 +3,10 @@
 This roadmap describes the current implementation state. It is not a claim of
 full FlyCapture2 SDK coverage or broad camera-model compatibility.
 
-The active phase is Stage 6.7: release candidate hardening and reproducibility.
-SDK feature expansion and broader multi-camera compatibility expansion are
-paused. Current hardware validation is limited to the physical camera that is
-available locally.
+The active phase is Stage 6.8: good-host hardware evidence and capture-rate
+validation. SDK feature expansion and broader multi-camera compatibility
+expansion are paused. Current hardware validation is limited to the physical
+camera that is available locally.
 
 ## Stage 0: Documentation and API Coverage
 
@@ -205,7 +205,7 @@ camera-model compatibility.
 
 ## Stage 6.7: Release Candidate Hardening And Reproducibility
 
-Status: active.
+Status: complete for the current project stage.
 
 Stage 6.7 keeps the existing `0.6.0` wrapper surface stable while making the
 release candidate easier to reproduce and audit.
@@ -229,6 +229,35 @@ Boundaries:
   experiment scheduling, LCD/projector sync, calibration, reconstruction, or
   acquisition workflow API
 - no claim of full SDK coverage or broad camera-model compatibility
+
+## Stage 6.8: Good-Host Capture-Rate Evidence
+
+Status: active.
+
+Stage 6.8 keeps version `0.6.0` and validates acquisition throughput on the new
+host after the project was re-cloned from `master`.
+
+Current priorities:
+
+- keep the Stage 6.7 release-candidate surface stable
+- add hardware validation tooling for real-time capture-rate measurement using
+  existing `Camera` APIs only
+- record good-host evidence for baseline and configured FPS matrix capture
+- distinguish wrapper defects from host/driver/USB throughput limits
+- document the old-host `pyflycap2` cross-check that reproduced the same 5 FPS
+  ceiling outside this wrapper
+
+Boundaries:
+
+- no new SDK bindings
+- no high-level `Camera` feature expansion
+- no throughput profiler as a public acquisition workflow API
+- no GUI, preview UI, sidecar, IPC, shared memory, ZMQ, `optic_system`,
+  experiment scheduling, LCD/projector sync, calibration, reconstruction, or
+  acquisition orchestration
+
+The Stage 6.8 capture-rate tool is release evidence and reproducibility
+infrastructure, not SDK feature expansion.
 
 ## Stage 7+: Future Expansion
 
