@@ -26,6 +26,15 @@ with Camera.open(index=0) as cam:
 # close() runs automatically
 ```
 
+### Hardware write gating
+
+Readonly hardware validation may open, start, read, stop, and close the camera,
+but does not persistently modify camera configuration.
+
+Persistent configuration-changing operations (trigger enable/disable, Format7
+configuration, property writes, pixel format changes) require both `--write`
+and `FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
+
 ---
 
 `Camera.read_frame()` and `Camera.read_frame_with_info()` never return a view into the FlyCapture2 SDK buffer.

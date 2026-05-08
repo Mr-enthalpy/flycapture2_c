@@ -8,7 +8,6 @@ import flycapture2_c
 
 EXPECTED_PUBLIC_EXPORTS_0_6 = {
     "Camera",
-    "CameraCleanupWarning",
     "CameraConfiguration",
     "CameraConfigurationError",
     "CameraDescriptor",

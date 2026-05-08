@@ -16,7 +16,6 @@ from flycapture2_c.ctypes_defs import (
     fc2TimeStamp,
 )
 from flycapture2_c.errors import (
-    CameraCleanupWarning,
     CameraStateError,
     FC2ErrorCode,
     FlyCapture2Error,

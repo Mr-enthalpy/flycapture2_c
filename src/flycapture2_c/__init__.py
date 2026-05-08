@@ -2,7 +2,6 @@
 
 from .bus import CameraDescriptor, enumerate_cameras
 from .errors import (
-    CameraCleanupWarning,
     CameraStateError,
     CameraConfigurationError,
     DLLLoadError,
@@ -27,7 +26,6 @@ from .errors import (
 
 __all__ = [
     "Camera",
-    "CameraCleanupWarning",
     "CameraConfiguration",
     "CameraConfigurationError",
     "CameraInfo",
@@ -91,10 +89,6 @@ def __getattr__(name: str):
         from .camera import Camera
 
         return Camera
-    if name == "CameraCleanupWarning":
-        from .errors import CameraCleanupWarning
-
-        return CameraCleanupWarning
     if name == "CameraInfo":
         from .camera import CameraInfo
 

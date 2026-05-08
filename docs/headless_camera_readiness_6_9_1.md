@@ -15,6 +15,19 @@ workflow orchestration, calibration, or reconstruction logic.
 Issues discovered by downstream usage should be translated into general wrapper
 requirements before being addressed here.
 
+### Write gating
+
+Readonly hardware validation may open, start, read, stop, and close the camera,
+but does not persistently modify camera configuration.
+
+Persistent configuration-changing operations (trigger enable/disable, Format7
+configuration, property writes, pixel format changes) require both `--write`
+and `FLYCAPTURE2_HARDWARE_WRITE_TEST=1`.
+
+Readonly mode validates pixel formats via `validate_format7()` without applying
+them. Trigger disable/enable/configuration is write-gated. Format7 / pixel-format
+changes are write-gated. Property writes are write-gated.
+
 ## Hardware
 
 - Camera: Grasshopper3 GS3-U3-51S5C
@@ -49,15 +62,20 @@ Result: **passed**.
 
 ## Trigger Behavior
 
-The hardware initially booted in external trigger mode. `disable_trigger()`
+The hardware initially booted in external trigger mode. In write mode, `disable_trigger()`
 successfully switched the camera into free-running capture. Original trigger
-state was restored after testing.
+state was restored after testing. Trigger restore uses the original mode only;
+no fallback to `source=0`/`mode=0` is performed if restore fails.
 
-Result: **passed**.
+Result: **passed** (write-gated).
 
 ## Pixel Format Configuration
 
-The following formats were configured and decoded successfully:
+Readonly mode validates pixel formats via `validate_format7()` without applying
+them. Write mode configures, captures, and restores.
+
+The following formats were validated and, in write mode, configured and decoded
+successfully:
 
 | Format  | Result |
 |---------|--------|

@@ -7,7 +7,6 @@ from .bus import CameraDescriptor, guid_to_tuple
 from .config import BandwidthAllocation, CameraConfiguration, GrabMode
 from .ctypes_defs import fc2CameraInfo, fc2Context, fc2Image, fc2Property
 from .errors import (
-    CameraCleanupWarning,
     CameraStateError,
     FC2ErrorCode,
     FlyCapture2Error,
