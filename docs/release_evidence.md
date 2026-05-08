@@ -93,9 +93,9 @@ No-hardware checks:
   setuptools metadata validation issue for `project.license = "MIT"`.
 - `py -3.12 -m pytest -q` with `PYTHONPATH=src`: passed, 146 passed and
   30 skipped.
-- `py -3.12 scripts/check_release.py` with `PYTHONPATH=src`: pytest and import
-  smoke passed, then failed because the local Python 3.12 environment does not
-  have the optional `build` package installed.
+- `py -3.12 scripts/check_release.py` with `PYTHONPATH=src`: passed.
+  This includes default pytest, import smoke, wheel/sdist build, artifact audit,
+  and clean install smoke from both wheel and sdist.
 - Import smoke: `0.6.0`.
 
 Readonly hardware checks:
