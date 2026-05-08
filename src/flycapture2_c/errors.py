@@ -169,6 +169,19 @@ class FlyCapture2CaptureStateError(FlyCapture2Error):
     pass
 
 
+class CameraCleanupWarning(FlyCapture2Error):
+    """Non-fatal warning: cleanup-stage operations had issues but resources were released.
+
+    Raised by :meth:`Camera.close` only when it completes resource release
+    but one or more cleanup steps (stop, disconnect, destroy) encountered a
+    non-fatal SDK error. The individual errors are stored as
+    ``Camera.cleanup_errors`` for inspection.
+
+    This warning never replaces the active exception inside a ``with Camera.open()``
+    context-manager exit.
+    """
+
+
 ERROR_CLASS_MAP: dict[FC2ErrorCode, type[FlyCapture2Error]] = {
     FC2ErrorCode.FAILED: FlyCapture2Failure,
     FC2ErrorCode.NOT_CONNECTED: FlyCapture2NotConnectedError,

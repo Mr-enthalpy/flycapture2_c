@@ -60,9 +60,15 @@ def resolve_sdk_root(explicit: str | os.PathLike[str] | None = None) -> Path:
         if _looks_like_sdk_root(candidate):
             return candidate
     searched = ", ".join(str(path) for path in _candidate_sdk_roots(base))
+    current_sdk_dir = os.environ.get(ENV_SDK_DIR)
     raise SDKNotFoundError(
-        f"FlyCapture2 SDK headers were not found. Searched: {searched}. "
-        f"Set {ENV_SDK_DIR} to the SDK root or to a parent directory containing {SDK_SUBDIR_NAME}/."
+        f"FlyCapture2 SDK headers were not found. "
+        f"Current {ENV_SDK_DIR}={current_sdk_dir!r}; "
+        f"Searched: {searched}. "
+        f"Set {ENV_SDK_DIR} to the FlyCapture2 SDK root. "
+        f"Example: set {ENV_SDK_DIR}=D:\\Program Files\\Point Grey Research\\FlyCapture2 "
+        f"or {ENV_SDK_DIR}=C:\\Program Files\\Point Grey Research\\FlyCapture2 "
+        f"(or place the SDK under {DEFAULT_SDK_CONTAINER}/{SDK_SUBDIR_NAME}/)."
     )
 
 
@@ -164,9 +170,16 @@ def load_library(
     candidates = [path for path in attempts if path.exists()]
     if not candidates:
         attempted = "\n".join(f"  - {path}" for path in attempts)
+        current_sdk_dir = os.environ.get(ENV_SDK_DIR)
+        current_dll_dir = os.environ.get(ENV_DLL_DIR)
         raise DLLLoadError(
             "FlyCapture2 C DLL was not found in any candidate location.\n"
-            f"Attempted:\n{attempted}"
+            f"Current {ENV_SDK_DIR}={current_sdk_dir!r}; "
+            f"Current {ENV_DLL_DIR}={current_dll_dir!r};\n"
+            f"Attempted:\n{attempted}\n"
+            f"Set {ENV_DLL_DIR} to the directory containing FlyCapture2_C*.dll. "
+            f"Example: set {ENV_DLL_DIR}=D:\\Program Files\\Point Grey Research\\FlyCapture2\\bin64\\vs2015 "
+            f"or {ENV_DLL_DIR}=C:\\Program Files\\Point Grey Research\\FlyCapture2\\bin64\\vs2015."
         )
 
     last_error: Exception | None = None
@@ -181,8 +194,12 @@ def load_library(
             last_error = exc
 
     attempted = "\n".join(f"  - {path}" for path in candidates)
+    current_sdk_dir = os.environ.get(ENV_SDK_DIR)
+    current_dll_dir = os.environ.get(ENV_DLL_DIR)
     raise DLLLoadError(
         "Failed to load the FlyCapture2 C DLL from all discovered candidates.\n"
+        f"Current {ENV_SDK_DIR}={current_sdk_dir!r}; "
+        f"Current {ENV_DLL_DIR}={current_dll_dir!r};\n"
         f"Attempted:\n{attempted}\n"
         f"Last error: {last_error}"
     )
