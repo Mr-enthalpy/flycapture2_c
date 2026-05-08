@@ -69,6 +69,7 @@ restore camera-local SDK state without using a GUI.
 
 Top-level error exports are part of the supported API for high-level callers:
 
+- `CameraCleanupWarning`
 - `CameraConfigurationError`
 - `CameraStateError`
 - `DLLLoadError`
