@@ -3,7 +3,7 @@
 This roadmap describes the current implementation state. It is not a claim of
 full FlyCapture2 SDK coverage or broad camera-model compatibility.
 
-The active focused milestone is Stage 6.7 Pixel Format Support Matrix and RGB
+The active focused milestone is Stage 6.9: Pixel Format Support Matrix and RGB
 Decode. Stage 6.8 good-host capture-rate evidence remains part of the current
 `master` history. SDK feature expansion and broader multi-camera compatibility
 expansion are paused. Current hardware validation is limited to the physical
@@ -206,7 +206,7 @@ camera-model compatibility.
 
 ## Stage 6.7: Release Candidate Hardening And Reproducibility
 
-Status: active focused hardening milestone.
+Status: complete for the current project stage.
 
 Stage 6.7 keeps the existing `0.6.0` wrapper surface stable while making the
 release candidate easier to reproduce and audit.
@@ -220,18 +220,11 @@ Current priorities:
 - run no-hardware CI on Windows for Python 3.8 through 3.13
 - improve README and recipe discoverability without adding features
 - record hardware validation evidence when the available camera is connected
-- make pixel-format support explicit across SDK enum knowledge,
-  camera-configurable candidates, `read_frame()` decode support, raw-copy-only
-  formats, and unsupported/compressed formats
-- decode the confirmed FlyCapture2 `RGB8`/`RGB` 24-bit interleaved format into
-  owned `(height, width, 3)` `uint8` NumPy arrays
 
 Boundaries:
 
 - no new SDK bindings
 - no high-level `Camera` feature expansion
-- no full image conversion subsystem, Bayer demosaic, YUV conversion,
-  compressed decoding, or color-management workflow
 - no register access, callbacks, events, or broader raw SDK expansion in this milestone
 - no GUI, preview UI, sidecar, IPC, shared memory, ZMQ, `optic_system`,
   experiment scheduling, LCD/projector sync, calibration, reconstruction, or
@@ -266,6 +259,34 @@ Boundaries:
 
 The Stage 6.8 capture-rate tool is release evidence and reproducibility
 infrastructure, not SDK feature expansion.
+
+## Stage 6.9: Pixel Format Support Matrix and RGB Decode
+
+Status: active focused hardening milestone.
+
+Stage 6.9 keeps version `0.6.0` and makes pixel-format support explicit without
+turning the wrapper into a full image conversion subsystem.
+
+Current priorities:
+
+- make pixel-format support explicit across SDK enum knowledge,
+  camera-configurable candidates, `read_frame()` decode support, raw-copy-only
+  formats, and unsupported/compressed formats
+- decode the confirmed FlyCapture2 `RGB8`/`RGB` 24-bit interleaved format into
+  owned `(height, width, 3)` `uint8` NumPy arrays
+- preserve explicit `UnsupportedPixelFormatError` for known-but-undecoded
+  formats and unknown SDK pixel-format values
+- keep Format7 and GigE pixel-format bitfield interpretation conservative
+  because FlyCapture2 pixel-format values can overlap
+
+Boundaries:
+
+- no new SDK bindings
+- no high-level `Camera` feature expansion beyond existing pixel-format
+  configuration and frame-read primitives
+- no Bayer demosaic, YUV conversion, compressed decoding, color management,
+  GUI, preview UI, sidecar, shared memory, ZMQ, IPC, `optic_system`,
+  experiment orchestration, calibration, or reconstruction
 
 ## Stage 7+: Future Expansion
 

@@ -1,9 +1,9 @@
 # API Coverage
 
 This table tracks the FlyCapture2 C API surface wrapped by this project. The
-current wrapped SDK surface is broad but not complete. Stage 6.7 is focused on
-release candidate hardening, reproducibility, and explicit pixel-format decode
-classification for the existing wrapper, not broad new SDK feature surface.
+current wrapped SDK surface is broad but not complete. Stage 6.9 is focused on
+explicit pixel-format decode classification for the existing wrapper, not broad
+new SDK feature surface.
 
 Deferred areas include register access, callbacks/events, and broader raw SDK
 coverage. Multi-camera compatibility evidence is limited to the currently

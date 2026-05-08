@@ -149,12 +149,13 @@ Format7/ROI/pixel format, SDK capture config, properties, embedded metadata,
 diagnostics, strobe/GPIO, GigE controls, raw function specs, and hardware
 validation tooling.
 
-Active work is Stage 6.7: release candidate hardening and reproducibility. This
-milestone audits public API boundaries, documentation, version metadata,
-packaging, clean installs, artifact contents, and no-hardware CI reproducibility
-without adding new SDK feature surface. Current hardware validation remains
-limited to the available camera. Broader camera-model and multi-camera
-validation is deferred until more hardware is available.
+Active work is Stage 6.9: Pixel Format Support Matrix and RGB Decode. This
+milestone makes pixel-format support explicit and adds conservative RGB8/RGB
+frame decode without adding new SDK bindings or a full image conversion
+subsystem. Stage 6.8 good-host capture-rate evidence remains part of the
+current `master` history. Current hardware validation remains limited to the
+available camera. Broader camera-model and multi-camera validation is deferred
+until more hardware is available.
 
 Default no-hardware validation:
 

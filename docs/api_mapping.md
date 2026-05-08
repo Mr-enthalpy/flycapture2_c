@@ -6,8 +6,8 @@ configuration, the generic property system, embedded metadata, strobe/GPIO,
 software trigger firing, and GigE-specific camera controls. It does not claim
 full SDK coverage.
 
-Stage 6.7 is release readiness, reproducibility, and explicit pixel-format
-decode classification. GPIO scope is limited to direct C API pin-direction
+Stage 6.9 is explicit pixel-format support-matrix and RGB decode hardening.
+GPIO scope is limited to direct C API pin-direction
 helpers plus metadata-level GPIO pin-state observation; no register-level GPIO
 control is wrapped.
 
