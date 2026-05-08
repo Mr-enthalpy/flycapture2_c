@@ -89,8 +89,8 @@ No-hardware checks:
 - `python -m pip install -e ".[dev]"`: blocked on this machine because the
   configured pip proxy could not fetch build dependencies for the default
   32-bit Python 3.8 environment.
-- `py -3.12 -m pip install --no-build-isolation -e ".[dev]"`: exposed a local
-  setuptools metadata validation issue for `project.license = "MIT"`.
+- `py -3.12 -m pip install --no-build-isolation -e ".[dev]"`: passed after
+  normalizing `project.license` metadata to `license = { text = "MIT" }`.
 - `py -3.12 -m pytest -q` with `PYTHONPATH=src`: passed, 146 passed and
   30 skipped.
 - `py -3.12 scripts/check_release.py` with `PYTHONPATH=src`: passed.
@@ -117,6 +117,7 @@ Capture-rate validation:
 
 - Baseline command:
   `py -3.12 scripts/measure_capture_rate.py --duration 10 --warmup 10 --output outputs/capture_rate_baseline_good_host.json`
+- `--warmup` is a duration in seconds, not a frame count.
 - Because the original trigger mode was enabled, baseline capture-rate
   measurement was run with `FLYCAPTURE2_HARDWARE_WRITE_TEST=1`; the script
   saved state, disabled trigger for continuous capture, enabled the current

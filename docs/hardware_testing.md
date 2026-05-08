@@ -96,6 +96,8 @@ $env:FLYCAPTURE2_HARDWARE_WRITE_TEST="1"
 python scripts/measure_capture_rate.py --fps 5 10 15 24 30 40 --duration 10 --warmup 10 --output outputs/capture_rate_matrix_good_host.json
 ```
 
+`--warmup` is a duration in seconds, not a frame count.
+
 `scripts/measure_capture_rate.py` records requested FPS, SDK/readback FPS,
 actual wall-clock FPS, actual/readback ratio, frame count, elapsed seconds,
 shape, dtype, pixel format, video mode, Format7 settings, bytes/frame, MiB/s,
