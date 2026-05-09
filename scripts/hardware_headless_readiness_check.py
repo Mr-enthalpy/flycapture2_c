@@ -70,6 +70,7 @@ PROPERTY_CHECK_ORDER = (
 PIXEL_FORMAT_TEST_ORDER = ("MONO8", "RAW8", "MONO16", "RAW16")
 
 CONCLUSION_FULLY_SUPPORTED = "fully_supported_and_hardware_validated"
+CONCLUSION_WRITE_GATED = "write_gated_hardware_validated"
 CONCLUSION_CAMERA_UNSUPPORTED = "camera_unsupported_wrapper_correct"
 CONCLUSION_FAILED_INVESTIGATE = "failed_on_hardware_needs_investigation"
 
@@ -202,7 +203,6 @@ def phase_1_lifecycle(report: dict, camera_index: int, *, write_enabled: bool) -
         "steps": [],
         "resource_lifecycle_passed": False,
         "capture_path_validated": False,
-        "passed": False,
     }
     report["lifecycle"] = lifecycle
     cam: Camera | None = None
@@ -406,6 +406,9 @@ def phase_1_lifecycle(report: dict, camera_index: int, *, write_enabled: bool) -
     record_step("second_close", cam)
 
     # 11. reopen
+    cam2: Camera | None = None
+    trigger_on_reopen = False
+    disabled_trigger_on_reopen = False
     try:
         cam2 = Camera.open(index=camera_index)
     except Exception as exc:
@@ -413,21 +416,44 @@ def phase_1_lifecycle(report: dict, camera_index: int, *, write_enabled: bool) -
         report["primary_error"] = lifecycle["steps"][-1]["error"]
         return False
     try:
-        cam2.start()
-        frame, elapsed_ms = read_frame_checked(cam2)
-        lifecycle["reopen_frame"] = _frame_dict(frame, elapsed_ms)
-        cam2.stop()
-    except Exception as exc:
-        record_failure("reopen_capture", exc, cam2)
-        _safe_close(cam2, lifecycle)
-        report["primary_error"] = lifecycle["steps"][-1]["error"]
-        return False
+        try:
+            tm2 = cam2.get_trigger_mode()
+            trigger_on_reopen = bool(tm2.on_off)
+        except Exception:
+            pass
+
+        can_capture_reopen = not trigger_on_reopen
+        if trigger_on_reopen and write_enabled and trigger_saved is not None:
+            try:
+                cam2.disable_trigger()
+                disabled_trigger_on_reopen = True
+                can_capture_reopen = True
+            except Exception:
+                lifecycle["reopen_skip_reason"] = "trigger_restored_to_external_mode_cannot_disable"
+
+        if not trigger_on_reopen and not write_enabled:
+            # trigger is off naturally, safe to capture
+            can_capture_reopen = True
+
+        if can_capture_reopen:
+            cam2.start()
+            frame, elapsed_ms = read_frame_checked(cam2)
+            lifecycle["reopen_frame"] = _frame_dict(frame, elapsed_ms)
+            cam2.stop()
+            lifecycle["reopen_capture_tested"] = True
+        else:
+            lifecycle["reopen_skip_reason"] = lifecycle.get(
+                "reopen_skip_reason", "trigger_enabled_requires_write_gate_to_disable"
+            )
+            lifecycle["reopen_capture_tested"] = False
     finally:
+        if disabled_trigger_on_reopen and trigger_saved is not None:
+            _restore_trigger_safely(cam2, trigger_saved, lifecycle)
         _safe_close(cam2, lifecycle)
     record_step("reopen_complete", cam2)
 
     lifecycle["resource_lifecycle_passed"] = True
-    lifecycle["passed"] = True
+    lifecycle["passed_scope"] = "resource_lifecycle_only"
     if unsafe_trigger_restore:
         lifecycle["unsafe_incomplete_restore"] = True
     return True
@@ -458,8 +484,8 @@ def _restore_trigger_safely(cam: Camera, trigger_saved: object, lifecycle: dict)
 
 def phase_2_trigger(report: dict, camera_index: int, *, write_enabled: bool) -> None:
     trigger: dict = {
-        "trigger_mode_info": None,
-        "original_trigger_mode": None,
+        "capability_info": None,
+        "current_trigger_mode": None,
         "readonly": not write_enabled,
         "disabled": None,
         "re_enabled": None,
@@ -473,21 +499,21 @@ def phase_2_trigger(report: dict, camera_index: int, *, write_enabled: bool) -> 
     try:
         cam = Camera.open(index=camera_index)
 
-        trigger_mode_info = cam.get_trigger_mode_info()
-        ti = trigger_mode_info
-        trigger["trigger_mode_info"] = {
-            "source": int(ti.source) if hasattr(ti, "source") else 0,
-            "mode": int(ti.mode) if hasattr(ti, "mode") else 0,
-            "polarity": int(ti.polarity) if hasattr(ti, "polarity") else 0,
-            "on_off": bool(ti.on_off) if hasattr(ti, "on_off") else None,
-            "available_sources": list(ti.available_sources) if hasattr(ti, "available_sources") else [],
-            "available_modes": list(ti.available_modes) if hasattr(ti, "available_modes") else [],
-            "available_polarities": list(ti.available_polarities) if hasattr(ti, "available_polarities") else [],
-            "trigger_present": bool(ti.present) if hasattr(ti, "present") else True,
+        ti = cam.get_trigger_mode_info()
+        trigger["capability_info"] = {
+            "present": ti.present,
+            "read_out_supported": ti.read_out_supported,
+            "on_off_supported": ti.on_off_supported,
+            "polarity_supported": ti.polarity_supported,
+            "source_mask": f"0x{ti.source_mask:08x}",
+            "mode_mask": f"0x{ti.mode_mask:08x}",
+            "software_trigger_supported": ti.software_trigger_supported,
+            "supported_sources": list(ti.supported_sources),
+            "supported_modes": list(ti.supported_modes),
         }
 
         original = cam.get_trigger_mode()
-        trigger["original_trigger_mode"] = {
+        trigger["current_trigger_mode"] = {
             "on_off": bool(original.on_off),
             "polarity": int(original.polarity),
             "source": int(original.source),
@@ -517,8 +543,10 @@ def phase_2_trigger(report: dict, camera_index: int, *, write_enabled: bool) -> 
 
         # optional re-enable (write-gated)
         write_gated = os.environ.get(ENV_HARDWARE_WRITE_TEST) == "1"
-        has_source0 = 0 in (trigger["trigger_mode_info"]["available_sources"] or [])
-        has_mode0 = 0 in (trigger["trigger_mode_info"]["available_modes"] or [])
+        sources = list(ti.supported_sources)
+        modes = list(ti.supported_modes)
+        has_source0 = 0 in sources
+        has_mode0 = 0 in modes
         if write_gated and has_source0 and has_mode0:
             try:
                 cam.enable_trigger(source=0, mode=0)
@@ -869,7 +897,7 @@ def phase_6_readiness_matrix(report: dict) -> None:
         if not resource_ok:
             return "skip", "skipped (resource lifecycle failed)"
         if trigger.get("disabled"):
-            return "pass", CONCLUSION_FULLY_SUPPORTED
+            return "pass", CONCLUSION_WRITE_GATED
         if trigger.get("readonly"):
             return "skip", "readonly mode (--write required for trigger mutation)"
         if trigger.get("error"):
@@ -919,7 +947,7 @@ def phase_6_readiness_matrix(report: dict) -> None:
             return "skip", "Format7 not supported or lifecycle failed"
         configured = sum(1 for t in pf_tests if t.get("set_result") == "ok")
         if configured > 0:
-            return "pass", f"{configured} format(s) configured and decodable"
+            return "pass", CONCLUSION_WRITE_GATED
         validated = sum(1 for t in pf_tests if t.get("validate_result", {}).get("settings_are_valid"))
         if validated > 0:
             return "skip", f"{validated} format(s) validated (readonly; --write to configure)"
@@ -950,6 +978,7 @@ def phase_6_readiness_matrix(report: dict) -> None:
             "api": "disable_trigger",
             "result": _disable_trigger_result()[0],
             "conclusion": _disable_trigger_result()[1],
+            "requires_write_permission": True,
             "risk": "External trigger may prevent frame acquisition" if trigger.get("readonly") else "-",
         },
         {
@@ -985,6 +1014,7 @@ def phase_6_readiness_matrix(report: dict) -> None:
             "api": "set_pixel_format/Format7",
             "result": _pixel_format_result()[0],
             "conclusion": _pixel_format_result()[1],
+            "requires_write_permission": True,
             "risk": "Requires Format7 support",
         },
         {
@@ -1033,6 +1063,7 @@ def print_summary(report: dict) -> None:
     reason = lifecycle.get("capture_skip_reason")
     if reason:
         print(f"  capture_skip_reason: {reason}")
+    print(f"  reopen_capture_tested: {lifecycle.get('reopen_capture_tested')}")
     steps = lifecycle.get("steps") or []
     for s in steps:
         err = s.get("error")
@@ -1051,6 +1082,13 @@ def print_summary(report: dict) -> None:
     print(f"  restored: {trigger.get('restored')}")
     if trigger.get("unsafe_incomplete_restore"):
         print(f"  ** UNSAFE: trigger restore failed **")
+    ti = trigger.get("capability_info") or {}
+    if ti:
+        print(f"  supported_sources: {ti.get('supported_sources')}")
+        print(f"  supported_modes: {ti.get('supported_modes')}")
+    ct = trigger.get("current_trigger_mode") or {}
+    if ct:
+        print(f"  current: on_off={ct.get('on_off')}, source={ct.get('source')}, mode={ct.get('mode')}")
     if trigger.get("error"):
         print(f"  error: {trigger['error']['message']}")
 

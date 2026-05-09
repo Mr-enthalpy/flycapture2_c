@@ -62,10 +62,14 @@ Result: **passed**.
 
 ## Trigger Behavior
 
-The hardware initially booted in external trigger mode. In write mode, `disable_trigger()`
-successfully switched the camera into free-running capture. Original trigger
-state was restored after testing. Trigger restore uses the original mode only;
-no fallback to `source=0`/`mode=0` is performed if restore fails.
+The hardware initially booted in external trigger mode. `disable_trigger()`
+(write-gated) successfully switched the camera into free-running capture.
+Original trigger state was restored via `set_trigger_mode()` after testing.
+No fallback to `source=0`/`mode=0` is performed if restore fails.
+
+`TriggerModeInfo` capability fields (`supported_sources`, `supported_modes`)
+are derived from SDK bitmasks (`source_mask`, `mode_mask`). Current trigger
+state is read via `get_trigger_mode()` and restored via `set_trigger_mode()`.
 
 Result: **passed** (write-gated).
 
