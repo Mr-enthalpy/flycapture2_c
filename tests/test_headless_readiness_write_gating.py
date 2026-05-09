@@ -121,3 +121,70 @@ def test_all_exports_no_CameraCleanupWarning() -> None:
     for name in flycapture2_c.__all__:
         if "Cleanup" in name:
             pytest.fail(f"Unexpected cleanup-related export: {name}")
+
+
+# ---------------------------------------------------------------------------
+# TriggerModeInfo serialization
+# ---------------------------------------------------------------------------
+
+
+def test_trigger_mode_info_has_supported_sources_and_modes() -> None:
+    from flycapture2_c.trigger import TriggerModeInfo
+    assert hasattr(TriggerModeInfo, "supported_sources")
+    assert hasattr(TriggerModeInfo, "supported_modes")
+    assert not hasattr(TriggerModeInfo, "available_sources")
+    assert not hasattr(TriggerModeInfo, "available_modes")
+
+
+def test_trigger_mode_info_supported_sources_returns_tuple() -> None:
+    from flycapture2_c.trigger import TriggerModeInfo
+    info = TriggerModeInfo(
+        present=True,
+        read_out_supported=True,
+        on_off_supported=True,
+        polarity_supported=True,
+        value_readable=True,
+        source_mask=0x0007,
+        software_trigger_supported=True,
+        mode_mask=0x8000,
+    )
+    sources = info.supported_sources
+    assert isinstance(sources, tuple)
+    assert 0 in sources
+
+
+def test_trigger_mode_info_supported_modes_returns_tuple() -> None:
+    from flycapture2_c.trigger import TriggerModeInfo
+    info = TriggerModeInfo(
+        present=True,
+        read_out_supported=True,
+        on_off_supported=True,
+        polarity_supported=True,
+        value_readable=True,
+        source_mask=0x0007,
+        software_trigger_supported=True,
+        mode_mask=0x8000,
+    )
+    modes = info.supported_modes
+    assert isinstance(modes, tuple)
+    assert 0 in modes
+
+
+def test_trigger_mode_info_derives_sources_and_modes_from_masks() -> None:
+    from flycapture2_c.trigger import TriggerModeInfo
+
+    info = TriggerModeInfo(
+        present=True,
+        read_out_supported=True,
+        on_off_supported=True,
+        polarity_supported=True,
+        value_readable=True,
+        source_mask=(1 << 0) | (1 << 2),
+        software_trigger_supported=True,
+        mode_mask=(1 << 15),  # mode 0
+    )
+
+    assert info.supported_sources == (0, 2, 7)
+    assert info.supported_modes == (0,)
+    assert not hasattr(info, "available_sources")
+    assert not hasattr(info, "available_modes")
