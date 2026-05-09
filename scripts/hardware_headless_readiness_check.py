@@ -419,8 +419,8 @@ def phase_1_lifecycle(report: dict, camera_index: int, *, write_enabled: bool) -
         try:
             tm2 = cam2.get_trigger_mode()
             trigger_on_reopen = bool(tm2.on_off)
-        except Exception:
-            pass
+        except Exception as exc:
+            lifecycle["reopen_trigger_read_error"] = str(exc)
 
         can_capture_reopen = not trigger_on_reopen
         if trigger_on_reopen and write_enabled and trigger_saved is not None:
@@ -428,12 +428,9 @@ def phase_1_lifecycle(report: dict, camera_index: int, *, write_enabled: bool) -
                 cam2.disable_trigger()
                 disabled_trigger_on_reopen = True
                 can_capture_reopen = True
-            except Exception:
+            except Exception as exc:
                 lifecycle["reopen_skip_reason"] = "trigger_restored_to_external_mode_cannot_disable"
-
-        if not trigger_on_reopen and not write_enabled:
-            # trigger is off naturally, safe to capture
-            can_capture_reopen = True
+                lifecycle["reopen_disable_trigger_error"] = str(exc)
 
         if can_capture_reopen:
             cam2.start()
@@ -446,6 +443,12 @@ def phase_1_lifecycle(report: dict, camera_index: int, *, write_enabled: bool) -
                 "reopen_skip_reason", "trigger_enabled_requires_write_gate_to_disable"
             )
             lifecycle["reopen_capture_tested"] = False
+
+    except Exception as exc:
+        record_failure("reopen_capture", exc, cam2)
+        report["primary_error"] = lifecycle["steps"][-1]["error"]
+        return False
+
     finally:
         if disabled_trigger_on_reopen and trigger_saved is not None:
             _restore_trigger_safely(cam2, trigger_saved, lifecycle)
@@ -934,11 +937,17 @@ def phase_6_readiness_matrix(report: dict) -> None:
 
     def _property_rw_result() -> tuple[str, str]:
         prop_list = props.get("properties") or []
+        write_tests = props.get("write_tests") or []
         if not prop_list:
             return "skip", "skipped"
+        if write_tests:
+            passed_count = sum(1 for w in write_tests if w.get("same_value_test"))
+            if passed_count > 0:
+                return "pass", CONCLUSION_WRITE_GATED
+            return "fail", "property write tests did not pass"
         writable_count = sum(1 for p in prop_list if p.get("writable"))
         if writable_count > 0:
-            return "pass", f"{writable_count} properties writable"
+            return "skip", f"{writable_count} properties writable (--write to test write)"
         return "skip", "no writable properties on this camera"
 
     def _pixel_format_result() -> tuple[str, str]:
@@ -1007,6 +1016,7 @@ def phase_6_readiness_matrix(report: dict) -> None:
             "api": "property APIs",
             "result": _property_rw_result()[0],
             "conclusion": _property_rw_result()[1],
+            "requires_write_permission": True,
             "risk": "Some properties may be read-only",
         },
         {
