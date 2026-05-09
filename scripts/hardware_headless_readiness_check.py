@@ -450,9 +450,17 @@ def phase_1_lifecycle(report: dict, camera_index: int, *, write_enabled: bool) -
         return False
 
     finally:
-        if disabled_trigger_on_reopen and trigger_saved is not None:
-            _restore_trigger_safely(cam2, trigger_saved, lifecycle)
-        _safe_close(cam2, lifecycle)
+        if cam2 is not None:
+            if cam2.is_capturing:
+                try:
+                    cam2.stop()
+                except Exception as exc:
+                    lifecycle["reopen_stop_before_restore_error"] = str(exc)
+
+            if disabled_trigger_on_reopen and trigger_saved is not None:
+                _restore_trigger_safely(cam2, trigger_saved, lifecycle)
+
+            _safe_close(cam2, lifecycle)
     record_step("reopen_complete", cam2)
 
     lifecycle["resource_lifecycle_passed"] = True
