@@ -53,6 +53,9 @@ from .properties import (
     KNOWN_PROPERTY_TYPES,
     PropertyType,
     PropertyWritePolicy,
+    get_property_abs_readback,
+    get_property_display_range,
+    get_property_display_value,
     normalize_property_type,
 )
 from .strobe import (
@@ -805,6 +808,18 @@ class Camera:
         assert self._context is not None
         normalized = normalize_property_type(property_type)
         return self._api.get_property(self._context, int(normalized))
+
+    def get_property_abs_readback(self, property_type: PropertyType | str | int) -> float | None:
+        normalized = normalize_property_type(property_type)
+        return get_property_abs_readback(self.get_property_info(normalized), self.get_property(normalized))
+
+    def get_property_display_value(self, property_type: PropertyType | str | int) -> float | int:
+        normalized = normalize_property_type(property_type)
+        return get_property_display_value(self.get_property_info(normalized), self.get_property(normalized))
+
+    def get_property_display_range(self, property_type: PropertyType | str | int) -> tuple[float, float] | tuple[int, int]:
+        normalized = normalize_property_type(property_type)
+        return get_property_display_range(self.get_property_info(normalized))
 
     def set_property(
         self,

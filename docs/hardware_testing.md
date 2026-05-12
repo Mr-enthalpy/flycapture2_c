@@ -171,6 +171,21 @@ $env:FLYCAPTURE2_HARDWARE_WRITE_TEST="1"
 python -m pytest tests/hardware/test_hardware_properties_write_reversible.py
 ```
 
+Focused `FRAME_RATE` property readback diagnostic:
+
+```powershell
+$env:FLYCAPTURE2_HARDWARE_TEST="1"
+$env:FLYCAPTURE2_CAMERA_INDEX="0"
+python scripts/diagnose_frame_rate_property.py
+```
+
+This readonly diagnostic prints the raw `FRAME_RATE` property fields
+(`value_a`, `value_b`, `abs_value`, `abs_control`) beside the property info
+range fields (`min_value`, `max_value`, `abs_min`, `abs_max`, units). It also
+prints `display_value` and `display_range`, which use the wrapper's normalized
+UI policy: absolute readback when `abs_val_supported` is true, raw integer
+readback otherwise.
+
 Embedded metadata and diagnostics hardware tests:
 
 ```powershell
