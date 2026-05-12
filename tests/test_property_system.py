@@ -3,7 +3,14 @@ from __future__ import annotations
 from flycapture2_c.camera import Camera
 from flycapture2_c.ctypes_defs import fc2CameraInfo, fc2Image, fc2PGRGuid, fc2Property, fc2PropertyInfo
 from flycapture2_c.errors import PropertyModeError, PropertyOutOfRangeError
-from flycapture2_c.properties import KNOWN_PROPERTY_TYPES, CameraPropertySnapshot, PropertyType, normalize_property_type
+from flycapture2_c.properties import (
+    KNOWN_PROPERTY_TYPES,
+    CameraPropertySnapshot,
+    PropertyType,
+    get_property_display_range,
+    get_property_display_value,
+    normalize_property_type,
+)
 
 
 def _write_c_string(struct, field_name: str, value: str) -> None:
@@ -237,6 +244,68 @@ def test_property_discovery_helpers_return_dataclasses() -> None:
     assert temperature.info is not None
     assert temperature.info.present is False
     assert temperature.value is None
+
+
+def test_property_display_value_prefers_absolute_readback_even_when_abs_control_is_off() -> None:
+    api = PropertySystemFakeAPI()
+    frame_rate_type = int(PropertyType.FRAME_RATE)
+    api._info_by_type[frame_rate_type].min = 1
+    api._info_by_type[frame_rate_type].max = 4095
+    api._info_by_type[frame_rate_type].absMin = 1.0
+    api._info_by_type[frame_rate_type].absMax = 75.47
+    _write_c_string(api._info_by_type[frame_rate_type], "pUnits", "frames per second")
+    _write_c_string(api._info_by_type[frame_rate_type], "pUnitAbbr", "fps")
+    api._value_by_type[frame_rate_type].absControl = 0
+    api._value_by_type[frame_rate_type].valueA = 1811
+    api._value_by_type[frame_rate_type].absValue = 20.0
+
+    camera = _open_camera(api)
+    try:
+        info = camera.get_property_info(PropertyType.FRAME_RATE)
+        value = camera.get_property(PropertyType.FRAME_RATE)
+        snapshot = next(item for item in camera.snapshot_properties() if item.property_type == PropertyType.FRAME_RATE)
+        display_value = camera.get_property_display_value(PropertyType.FRAME_RATE)
+        display_range = camera.get_property_display_range(PropertyType.FRAME_RATE)
+        abs_readback = camera.get_property_abs_readback(PropertyType.FRAME_RATE)
+    finally:
+        camera.close()
+
+    assert value.abs_control is False
+    assert value.value_a == 1811
+    assert value.abs_value == 20.0
+    assert get_property_display_value(info, value) == 20.0
+    assert get_property_display_range(info) == (1.0, 75.47000122070312)
+    assert display_value == 20.0
+    assert display_range == (1.0, 75.47000122070312)
+    assert abs_readback == 20.0
+    assert snapshot.display_value == 20.0
+    assert snapshot.display_range == (1.0, 75.47000122070312)
+
+
+def test_property_display_value_falls_back_to_raw_value_when_absolute_values_are_unsupported() -> None:
+    api = PropertySystemFakeAPI()
+    sharpness_type = int(PropertyType.SHARPNESS)
+    api._info_by_type[sharpness_type].absValSupported = 0
+    api._info_by_type[sharpness_type].min = 0
+    api._info_by_type[sharpness_type].max = 4095
+    api._value_by_type[sharpness_type].valueA = 1811
+    api._value_by_type[sharpness_type].absValue = 0.0
+
+    camera = _open_camera(api)
+    try:
+        info = camera.get_property_info(PropertyType.SHARPNESS)
+        value = camera.get_property(PropertyType.SHARPNESS)
+        display_value = camera.get_property_display_value(PropertyType.SHARPNESS)
+        display_range = camera.get_property_display_range(PropertyType.SHARPNESS)
+        abs_readback = camera.get_property_abs_readback(PropertyType.SHARPNESS)
+    finally:
+        camera.close()
+
+    assert get_property_display_value(info, value) == 1811
+    assert get_property_display_range(info) == (0, 4095)
+    assert display_value == 1811
+    assert display_range == (0, 4095)
+    assert abs_readback is None
 
 
 def test_new_convenience_methods_delegate_to_generic_property_api() -> None:

@@ -105,6 +105,13 @@ class CameraPropertyInfo:
             )
         )
 
+    @property
+    def display_range(self) -> tuple[float, float] | tuple[int, int]:
+        """Return the range in the same units as the preferred display value."""
+        if self.abs_val_supported:
+            return (self.abs_min, self.abs_max)
+        return (self.min_value, self.max_value)
+
 
 @dataclass(frozen=True)
 class CameraPropertyValue:
@@ -133,6 +140,30 @@ class CameraPropertyValue:
         )
 
 
+def get_property_abs_readback(info: CameraPropertyInfo, value: CameraPropertyValue) -> float | None:
+    """Return the SDK absolute readback when the camera reports absolute values.
+
+    `abs_control` controls whether writes use the absolute field. It is not a
+    display-unit selector for readback; when `abs_val_supported` is true, the
+    SDK returns `absValue` in `info.units` / `info.unit_abbr`.
+    """
+    if not info.abs_val_supported:
+        return None
+    return value.abs_value
+
+
+def get_property_display_value(info: CameraPropertyInfo, value: CameraPropertyValue) -> float | int:
+    """Return the value downstream UIs should display with `display_range`."""
+    abs_readback = get_property_abs_readback(info, value)
+    if abs_readback is not None:
+        return abs_readback
+    return value.value_a
+
+
+def get_property_display_range(info: CameraPropertyInfo) -> tuple[float, float] | tuple[int, int]:
+    return info.display_range
+
+
 @dataclass(frozen=True)
 class CameraPropertySnapshot:
     property_type: PropertyType
@@ -144,6 +175,18 @@ class CameraPropertySnapshot:
     def present(self) -> bool:
         return bool(self.info.present) if self.info is not None else False
 
+    @property
+    def display_value(self) -> float | int | None:
+        if self.info is None or self.value is None:
+            return None
+        return get_property_display_value(self.info, self.value)
+
+    @property
+    def display_range(self) -> tuple[float, float] | tuple[int, int] | None:
+        if self.info is None:
+            return None
+        return get_property_display_range(self.info)
+
 
 __all__ = [
     "CameraPropertyInfo",
@@ -153,5 +196,8 @@ __all__ = [
     "PropertyWritePolicy",
     "PropertyType",
     "SUPPORTED_HIGH_LEVEL_WRITE_PROPERTIES",
+    "get_property_abs_readback",
+    "get_property_display_range",
+    "get_property_display_value",
     "normalize_property_type",
 ]

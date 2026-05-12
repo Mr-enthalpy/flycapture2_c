@@ -64,8 +64,16 @@ future milestone adds an explicit decoder. See `docs/pixel_formats.md`.
 - `fc2GetPropertyInfo()` -> `Camera.get_property_info()`
 - `fc2GetPropertyInfo()` for all known property types -> `Camera.list_property_infos()`, `Camera.snapshot_properties()`
 - `fc2GetProperty()` -> `Camera.get_property()`, `Camera.get_property_raw()`, `Camera.list_properties()`
+- `fc2GetProperty()` + `fc2GetPropertyInfo()` -> `Camera.get_property_display_value()`, `Camera.get_property_display_range()`, `Camera.get_property_abs_readback()`
 - `fc2SetProperty()` -> advanced `Camera.set_property()`, `Camera.set_property_raw()`
 - `fc2SetProperty()` with strict validation -> `Camera.set_property_abs()`, `Camera.set_property_integer()`, `Camera.set_property_on_off()`, `Camera.set_property_auto()`, `Camera.set_property_one_push()`
+
+Display readback policy:
+
+- if `CameraPropertyInfo.abs_val_supported` is true, `CameraPropertyValue.abs_value` is the preferred display readback and should be paired with `abs_min` / `abs_max`
+- `CameraPropertyValue.abs_control` indicates whether SDK absolute control is enabled for writes; it is not a reason to display `value_a` when `abs_val_supported` is true
+- if absolute values are not supported, display helpers fall back to `value_a` with `min_value` / `max_value`
+- `CameraPropertySnapshot.display_value` and `display_range` apply the same policy for snapshot-style UIs
 
 High-level convenience mapping:
 

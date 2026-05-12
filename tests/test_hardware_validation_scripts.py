@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts import hardware_capability_report, run_hardware_validation
+from scripts import diagnose_frame_rate_property, hardware_capability_report, run_hardware_validation
+from flycapture2_c.properties import CameraPropertyInfo, CameraPropertyValue, PropertyType
 from flycapture2_c.pixel_format import PixelFormat
 
 
@@ -86,6 +87,66 @@ def test_capability_report_pixel_format_bitfield_summary() -> None:
     compressed_summary = hardware_capability_report.pixel_format_summary_from_bitfield(int(PixelFormat.YUV422_JPEG))
     assert "YUV411" not in compressed_summary["supported_by_camera"]
     assert "YUV422_JPEG" in compressed_summary["unsupported_or_compressed"]
+
+
+class FakeFrameRateDiagnosticCamera:
+    def __init__(self) -> None:
+        self.info = CameraPropertyInfo(
+            property_type=PropertyType.FRAME_RATE,
+            present=True,
+            auto_supported=True,
+            manual_supported=True,
+            on_off_supported=True,
+            one_push_supported=False,
+            abs_val_supported=True,
+            read_out_supported=True,
+            min_value=1,
+            max_value=4095,
+            abs_min=1.0,
+            abs_max=75.47,
+            units="frames per second",
+            unit_abbr="fps",
+        )
+        self.value = CameraPropertyValue(
+            property_type=PropertyType.FRAME_RATE,
+            present=True,
+            abs_control=False,
+            one_push=False,
+            on_off=True,
+            auto_manual_mode=False,
+            value_a=1811,
+            value_b=0,
+            abs_value=20.0,
+        )
+
+    def get_property_info(self, property_type):
+        assert property_type == PropertyType.FRAME_RATE
+        return self.info
+
+    def get_property(self, property_type):
+        assert property_type == PropertyType.FRAME_RATE
+        return self.value
+
+    def get_property_display_value(self, property_type):
+        assert property_type == PropertyType.FRAME_RATE
+        return 20.0
+
+
+def test_frame_rate_property_diagnostic_reports_raw_and_display_fields() -> None:
+    payload = diagnose_frame_rate_property.build_frame_rate_property_diagnostic(FakeFrameRateDiagnosticCamera())
+    text = diagnose_frame_rate_property.format_diagnostic(payload)
+
+    assert payload["property"] == "FRAME_RATE"
+    assert payload["abs_val_supported"] is True
+    assert payload["abs_control"] is False
+    assert payload["value_a"] == 1811
+    assert payload["abs_value"] == 20.0
+    assert payload["display_value"] == 20.0
+    assert payload["display_range"] == [1.0, 75.47]
+    assert payload["readback_policy"] == "abs_value"
+    assert "property: FRAME_RATE" in text
+    assert "value_a: 1811" in text
+    assert "abs_value: 20.0" in text
 
 
 def test_hardware_validation_runner_builds_expected_readonly_commands() -> None:

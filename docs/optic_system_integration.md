@@ -43,13 +43,21 @@ The minimal camera-local surface needed by that service maps to
 | Get serial number | `cam.get_camera_info().serial_number` |
 | Enumerate adjustable property names | `cam.list_property_infos()` or `cam.snapshot_properties()` |
 | Get property range/capabilities | `cam.get_property_info(PropertyType....)` |
-| Get property value | `cam.get_property(PropertyType....)` |
+| Get property value for editing/display | `cam.get_property_display_value(PropertyType....)` with `cam.get_property_display_range(PropertyType....)` |
+| Get raw SDK property fields | `cam.get_property(PropertyType....)` or `cam.get_property_raw(PropertyType....)` |
 | Set property value | `cam.set_property_abs(...)`, convenience setters, or `cam.set_white_balance(...)` |
 | Configure pixel format / Format7 / ROI | `cam.set_pixel_format(...)`, `cam.set_format7(...)`, `cam.set_roi(...)` |
 | Cleanup | context manager, `cam.stop()`, `cam.close()` |
 
 `PreConfigGUI` should be replaced by explicit configuration calls. It should
 not be preserved as a requirement in the new headless service.
+
+For editable property panels, keep the value and range in the same unit system.
+If `abs_val_supported` is true, display `abs_value` with `abs_min` / `abs_max`
+even when `abs_control` is false. `abs_control` is a write/control-mode flag,
+not a readback unit selector. This prevents cases such as displaying a raw
+`FRAME_RATE.value_a` value like `1811` next to an absolute FPS range such as
+`[1.00, 75.47]`. Use the display helpers for this normalized policy.
 
 ## Hardware Validation On Available Camera
 
